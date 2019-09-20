@@ -1227,12 +1227,38 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 				dtVsub(diff, ag->npos, nei->npos);
 				diff[1] = 0;
 				
-				const float distSqr = dtVlenSqr(diff);
+				float distSqr = dtVlenSqr(diff);
+				
 				if (distSqr < 0.00001f)
 					continue;
+
+				float dist = 0.0f;
+
+				// check if agent want to use the oriented bounding box instead of only a radius
+				if (nei->params.useObb)
+				{
+					// get the distance from point to all segments (4 segments per vehicle)
+					float seg_dist[4] { 0.0f, 0.0f, 0.0f, 0.0f };
+					float seg_per[4] { 0.0f, 0.0f, 0.0f, 0.0f };
+					dtDistancePtPolyEdgesSqr(ag->npos, nei->params.obb, 4, seg_dist, seg_per);
+					// get the minimum distance to the segments
+					float min = seg_dist[0];
+					dist = min;
+					for (int k=0; k<4; ++k)
+					{
+						if (seg_dist[k] < min)
+							min = seg_dist[k];	
+					}
+					if (dist > min)
+						dist = min;
+
+					distSqr = dist;
+				}
+
 				if (distSqr > dtSqr(separationDist))
 					continue;
-				const float dist = dtMathSqrtf(distSqr);
+
+				dist = dtMathSqrtf(distSqr);
 				const float weight = separationWeight * (1.0f - dtSqr(dist*invSeparationDist));
 				
 				dtVmad(disp, disp, diff, weight/dist);
