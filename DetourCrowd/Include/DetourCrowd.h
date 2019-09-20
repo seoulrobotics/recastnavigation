@@ -96,6 +96,11 @@ struct dtCrowdAgentParams
 	/// The index of the query filter used by this agent.
 	unsigned char queryFilterType;
 
+	/// optional oriented bounding box to use at the separation step between agents
+	/// 4 segments: [x][y][z] [x][y][z] [x][y][z] [x][y][z]
+	bool useObb;
+	float obb[3*4];
+
 	/// User defined data attached to the agent.
 	void* userData;
 };
@@ -457,4 +462,3 @@ A higher value will result in agents trying to stay farther away from each other
 the cost of more difficult steering in tight spaces.
 
 */
-
