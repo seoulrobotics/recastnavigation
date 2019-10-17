@@ -23,10 +23,22 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+enum SamplePolyAreas
+{
+	SAMPLE_POLYAREA_GROUND,
+	SAMPLE_POLYAREA_WATER,
+	SAMPLE_POLYAREA_ROAD,
+	SAMPLE_POLYAREA_DOOR,
+	SAMPLE_POLYAREA_GRASS,
+	SAMPLE_POLYAREA_JUMP,
+	SAMPLE_POLYAREA_CROSS
+};
+
 rcMeshLoaderObj::rcMeshLoaderObj() :
-	m_scale(1.0f),
+	m_scale(0.01f),
 	m_verts(0),
 	m_tris(0),
+	m_mats(0),
 	m_normals(0),
 	m_vertCount(0),
 	m_triCount(0)
@@ -38,6 +50,7 @@ rcMeshLoaderObj::~rcMeshLoaderObj()
 	delete [] m_verts;
 	delete [] m_normals;
 	delete [] m_tris;
+	delete [] m_mats;
 }
 		
 void rcMeshLoaderObj::addVertex(float x, float y, float z, int& cap)
@@ -58,21 +71,29 @@ void rcMeshLoaderObj::addVertex(float x, float y, float z, int& cap)
 	m_vertCount++;
 }
 
-void rcMeshLoaderObj::addTriangle(int a, int b, int c, int& cap)
+void rcMeshLoaderObj::addTriangle(int a, int b, int c, char mat, int& cap)
 {
 	if (m_triCount+1 > cap)
 	{
 		cap = !cap ? 8 : cap*2;
 		int* nv = new int[cap*3];
+		char* nm = new char[cap];
 		if (m_triCount)
+		{
 			memcpy(nv, m_tris, m_triCount*3*sizeof(int));
+			memcpy(nm, m_mats, m_triCount*sizeof(char));
+		}
 		delete [] m_tris;
+		delete [] m_mats;
 		m_tris = nv;
+		m_mats = nm;
 	}
 	int* dst = &m_tris[m_triCount*3];
 	*dst++ = a;
 	*dst++ = b;
 	*dst++ = c;
+	// save the material
+	m_mats[m_triCount] = mat;
 	m_triCount++;
 }
 
@@ -181,7 +202,9 @@ bool rcMeshLoaderObj::load(const std::string& filename)
 	int nv;
 	int vcap = 0;
 	int tcap = 0;
-	
+	char matName[1024];
+	char mat = SamplePolyAreas::SAMPLE_POLYAREA_GROUND;
+
 	while (src < srcEnd)
 	{
 		// Parse one row
@@ -194,6 +217,18 @@ bool rcMeshLoaderObj::load(const std::string& filename)
 			// Vertex pos
 			sscanf(row+1, "%f %f %f", &x, &y, &z);
 			addVertex(x, y, z, vcap);
+			mat = SamplePolyAreas::SAMPLE_POLYAREA_GROUND;
+		}
+		if (row[0] == 'u' && row[1] == 's')
+		{
+			memset(matName, 0, 1024);
+			sscanf(row+7, "%s", matName);
+			if (_stricmp(matName, "road") == 0)
+				mat = SamplePolyAreas::SAMPLE_POLYAREA_ROAD;
+			else if (_stricmp(matName, "cross") == 0)
+				mat = SamplePolyAreas::SAMPLE_POLYAREA_CROSS;
+			else
+				mat = SamplePolyAreas::SAMPLE_POLYAREA_GROUND;
 		}
 		if (row[0] == 'f')
 		{
@@ -206,7 +241,7 @@ bool rcMeshLoaderObj::load(const std::string& filename)
 				const int c = face[i];
 				if (a < 0 || a >= m_vertCount || b < 0 || b >= m_vertCount || c < 0 || c >= m_vertCount)
 					continue;
-				addTriangle(a, b, c, tcap);
+				addTriangle(a, b, c, mat, tcap);
 			}
 		}
 	}

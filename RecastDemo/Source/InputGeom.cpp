@@ -112,7 +112,8 @@ InputGeom::InputGeom() :
 	m_mesh(0),
 	m_hasBuildSettings(false),
 	m_offMeshConCount(0),
-	m_volumeCount(0)
+	m_volumeCount(0),
+	m_applyMaterialAsType(true)
 {
 }
 

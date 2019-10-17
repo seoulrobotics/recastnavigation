@@ -518,6 +518,39 @@ bool Sample_SoloMesh::handleBuild()
 	for (int i  = 0; i < m_geom->getConvexVolumeCount(); ++i)
 		rcMarkConvexPolyArea(m_ctx, vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *m_chf);
 
+	if (m_geom->getApplyMaterialAsType())
+	{
+		const char *mats = m_geom->getMesh()->getMats();
+		const int *tri = m_geom->getMesh()->getTris();
+		const float *verts = m_geom->getMesh()->getVerts();
+		float faceVerts[3*3];
+		float min, max;
+		int ind;
+		m_ctx->log(RC_LOG_PROGRESS, "Defining areas by material:");
+		for (int i=0; i<m_geom->getMesh()->getTriCount(); ++i)
+		{
+			if (mats[i] != 0)
+			{
+				// m_ctx->log(RC_LOG_PROGRESS, "Defining area for %d", mats[i]);
+				ind = tri[i*3] * 3;
+				faceVerts[0] = verts[ind];
+				faceVerts[1] = verts[ind+1];
+				faceVerts[2] = verts[ind+2];
+				ind = tri[i*3+1] * 3;
+				faceVerts[3] = verts[ind];
+				faceVerts[4] = verts[ind+1];
+				faceVerts[5] = verts[ind+2];
+				ind = tri[i*3+2] * 3;
+				faceVerts[6] = verts[ind];
+				faceVerts[7] = verts[ind+1];
+				faceVerts[8] = verts[ind+2];
+				// get min and max
+				min = rcMin<float>(rcMin<float>(faceVerts[1], faceVerts[4]), faceVerts[7]);
+				max = min +5;
+				rcMarkConvexPolyArea(m_ctx, faceVerts, 3, min, max, mats[i], *m_chf);
+			}
+		}
+	}
 	
 	// Partition the heightfield so that we can use simple algorithm later to triangulate the walkable areas.
 	// There are 3 martitioning methods, each with some pros and cons:
@@ -662,13 +695,17 @@ bool Sample_SoloMesh::handleBuild()
 				
 			if (m_pmesh->areas[i] == SAMPLE_POLYAREA_GROUND ||
 				m_pmesh->areas[i] == SAMPLE_POLYAREA_GRASS ||
-				m_pmesh->areas[i] == SAMPLE_POLYAREA_ROAD)
+				m_pmesh->areas[i] == SAMPLE_POLYAREA_CROSS)
 			{
 				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK;
 			}
 			else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_WATER)
 			{
 				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_SWIM;
+			}
+			else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_ROAD)
+			{
+				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_CROSS;
 			}
 			else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_DOOR)
 			{

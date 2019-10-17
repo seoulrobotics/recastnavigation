@@ -48,6 +48,7 @@ enum SamplePolyAreas
 	SAMPLE_POLYAREA_DOOR,
 	SAMPLE_POLYAREA_GRASS,
 	SAMPLE_POLYAREA_JUMP,
+	SAMPLE_POLYAREA_CROSS
 };
 enum SamplePolyFlags
 {
@@ -56,6 +57,7 @@ enum SamplePolyFlags
 	SAMPLE_POLYFLAGS_DOOR		= 0x04,		// Ability to move through doors.
 	SAMPLE_POLYFLAGS_JUMP		= 0x08,		// Ability to jump.
 	SAMPLE_POLYFLAGS_DISABLED	= 0x10,		// Disabled polygon
+	SAMPLE_POLYFLAGS_CROSS		= 0x20,		// Ability to cross through road
 	SAMPLE_POLYFLAGS_ALL		= 0xffff	// All abilities.
 };
 

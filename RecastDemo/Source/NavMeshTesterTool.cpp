@@ -234,7 +234,9 @@ NavMeshTesterTool::NavMeshTesterTool() :
 	m_eposSet(false),
 	m_pathIterNum(0),
 	m_pathIterPolyCount(0),
-	m_steerPointCount(0)
+	m_steerPointCount(0),
+	m_areaRoadCost(10.0f)
+
 {
 	m_filter.setIncludeFlags(SAMPLE_POLYFLAGS_ALL ^ SAMPLE_POLYFLAGS_DISABLED);
 	m_filter.setExcludeFlags(0);
@@ -258,8 +260,9 @@ void NavMeshTesterTool::init(Sample* sample)
 	{
 		// Change costs.
 		m_filter.setAreaCost(SAMPLE_POLYAREA_GROUND, 1.0f);
-		m_filter.setAreaCost(SAMPLE_POLYAREA_WATER, 10.0f);
-		m_filter.setAreaCost(SAMPLE_POLYAREA_ROAD, 1.0f);
+		m_filter.setAreaCost(SAMPLE_POLYAREA_CROSS, 1.0f);
+		m_filter.setAreaCost(SAMPLE_POLYAREA_WATER, 1.0f);
+		m_filter.setAreaCost(SAMPLE_POLYAREA_ROAD, m_areaRoadCost);
 		m_filter.setAreaCost(SAMPLE_POLYAREA_DOOR, 1.0f);
 		m_filter.setAreaCost(SAMPLE_POLYAREA_GRASS, 2.0f);
 		m_filter.setAreaCost(SAMPLE_POLYAREA_JUMP, 1.5f);
@@ -462,7 +465,9 @@ void NavMeshTesterTool::handleMenu()
 	}
 	imguiUnindent();
 
-	imguiSeparator();	
+	imguiSeparator();
+
+	imguiSlider("Area ROAD cost", &m_areaRoadCost, 1.0f, 100.0f, 1.0f);
 }
 
 void NavMeshTesterTool::handleClick(const float* /*s*/, const float* p, bool shift)
@@ -694,6 +699,12 @@ void NavMeshTesterTool::recalc()
 	
 	m_pathFindStatus = DT_FAILURE;
 	
+	// refresh area cost
+	if (m_navQuery)
+	{
+		m_filter.setAreaCost(SAMPLE_POLYAREA_ROAD, m_areaRoadCost);
+	}
+
 	if (m_toolMode == TOOLMODE_PATHFIND_FOLLOW)
 	{
 		m_pathIterNum = 0;
