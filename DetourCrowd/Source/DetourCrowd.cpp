@@ -561,6 +561,7 @@ int dtCrowd::addAgent(const float* pos, const dtCrowdAgentParams* params)
 	ag->targetState = DT_CROWDAGENT_TARGET_NONE;
 	
 	ag->active = true;
+	ag->paused = false;
 
 	return idx;
 }
@@ -574,6 +575,15 @@ void dtCrowd::removeAgent(const int idx)
 	if (idx >= 0 && idx < m_maxAgents)
 	{
 		m_agents[idx].active = false;
+	}
+}
+
+/// Pause an agent so it is not moved by the crowd
+void dtCrowd::pauseAgent(const int idx, bool pause) 
+{
+	if (idx >= 0 && idx < m_maxAgents)
+	{
+		m_agents[idx].paused = pause;
 	}
 }
 
@@ -1102,6 +1112,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 		
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 			continue;
+		if (ag->paused)
+			continue;
 		if (ag->targetState == DT_CROWDAGENT_TARGET_NONE || ag->targetState == DT_CROWDAGENT_TARGET_VELOCITY)
 			continue;
 		
@@ -1140,6 +1152,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 		dtCrowdAgent* ag = agents[i];
 		
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
+			continue;
+		if (ag->paused)
 			continue;
 		if (ag->targetState == DT_CROWDAGENT_TARGET_NONE || ag->targetState == DT_CROWDAGENT_TARGET_VELOCITY)
 			continue;
@@ -1184,6 +1198,14 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			continue;
 		if (ag->targetState == DT_CROWDAGENT_TARGET_NONE)
 			continue;
+		if (ag->paused) 
+		{
+			// stop almost (to maintain direction)
+			dtVscale(ag->vel, ag->vel, 0.0001);
+			dtVscale(ag->nvel, ag->nvel, 0.0001);
+			dtVscale(ag->dvel, ag->dvel, 0.0001);
+			continue;
+		}
 		
 		float dvel[3] = {0,0,0};
 
@@ -1207,6 +1229,7 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			ag->desiredSpeed = ag->params.maxSpeed;
 			dtVscale(dvel, dvel, ag->desiredSpeed * speedScale);
 		}
+
 
 		// Separation
 		if (ag->params.updateFlags & DT_CROWD_SEPARATION)
@@ -1287,6 +1310,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 		
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 			continue;
+		if (ag->paused)
+			continue;
 		
 		if (ag->params.updateFlags & DT_CROWD_OBSTACLE_AVOIDANCE)
 		{
@@ -1343,6 +1368,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 		dtCrowdAgent* ag = agents[i];
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 			continue;
+		if (ag->paused)
+			continue;
 		integrate(ag, dt);
 	}
 	
@@ -1357,6 +1384,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			const int idx0 = getAgentIndex(ag);
 			
 			if (ag->state != DT_CROWDAGENT_STATE_WALKING)
+				continue;
+			if (ag->paused)
 				continue;
 
 			dtVset(ag->disp, 0,0,0);
@@ -1408,6 +1437,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			dtCrowdAgent* ag = agents[i];
 			if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 				continue;
+			if (ag->paused)
+				continue;
 			
 			dtVadd(ag->npos, ag->npos, ag->disp);
 		}
@@ -1417,6 +1448,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 	{
 		dtCrowdAgent* ag = agents[i];
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
+			continue;
+		if (ag->paused)
 			continue;
 		
 		// Move along navmesh.
@@ -1441,7 +1474,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 		dtCrowdAgentAnimation* anim = &m_agentAnims[idx];
 		if (!anim->active)
 			continue;
-		
+		if (ag->paused)
+			continue;
 
 		anim->t += dt;
 		if (anim->t > anim->tmax)
