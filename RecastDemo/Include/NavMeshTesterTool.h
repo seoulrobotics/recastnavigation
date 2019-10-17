@@ -92,6 +92,8 @@ class NavMeshTesterTool : public SampleTool
 	float m_steerPoints[MAX_STEER_POINTS*3];
 	int m_steerPointCount;
 	
+	float m_areaRoadCost;
+
 public:
 	NavMeshTesterTool();
 
@@ -111,4 +113,3 @@ public:
 };
 
 #endif // NAVMESHTESTERTOOL_H
-
