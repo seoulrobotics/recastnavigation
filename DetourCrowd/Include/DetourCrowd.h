@@ -129,6 +129,9 @@ struct dtCrowdAgent
 	/// True if the agent has valid path (targetState == DT_CROWDAGENT_TARGET_VALID) and the path does not lead to the requested position, else false.
 	bool partial;
 
+	// True if the agent is paused (it does not move)
+	bool paused;
+
 	/// The path corridor the agent is using.
 	dtPathCorridor corridor;
 
@@ -293,6 +296,11 @@ public:
 	///  @param[in]		idx		The agent index. [Limits: 0 <= value < #getAgentCount()]
 	void removeAgent(const int idx);
 	
+	/// Pause an agent so it is not moved by the crowd
+	///  @param[in]		idx		The agent index. [Limits: 0 <= value < #getAgentCount()]
+	///  @param[in]		pause	Bool to set agent as paused or unpaused
+	void pauseAgent(const int idx, bool pause);
+
 	/// Submits a new move request for the specified agent.
 	///  @param[in]		idx		The agent index. [Limits: 0 <= value < #getAgentCount()]
 	///  @param[in]		ref		The position's polygon reference.
