@@ -76,6 +76,7 @@ class InputGeom
 	float m_meshBMin[3], m_meshBMax[3];
 	BuildSettings m_buildSettings;
 	bool m_hasBuildSettings;
+	bool m_applyMaterialAsType;
 	
 	/// @name Off-Mesh connections.
 	///@{
@@ -140,6 +141,7 @@ public:
 	void deleteConvexVolume(int i);
 	void drawConvexVolumes(struct duDebugDraw* dd, bool hilight = false);
 	///@}
+	bool getApplyMaterialAsType() const { return m_applyMaterialAsType; };
 	
 private:
 	// Explicitly disabled copy constructor and copy assignment operator.
