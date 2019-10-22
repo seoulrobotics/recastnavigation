@@ -361,6 +361,10 @@ public:
 	/// Gets the query object used by the crowd.
 	const dtNavMeshQuery* getNavMeshQuery() const { return m_navquery; }
 
+	/// Returns if one of the neighbours of an agent has a OBB (Oriented Bounding Box).
+	/// That means for Carla, that a vehicle is near
+	bool hasVehicleNear(const int i);
+	
 private:
 	// Explicitly disabled copy constructor and copy assignment operator.
 	dtCrowd(const dtCrowd&);
