@@ -29,7 +29,7 @@
 /// The maximum number of neighbors that a crowd agent can take into account
 /// for steering decisions.
 /// @ingroup crowd
-static const int DT_CROWDAGENT_MAX_NEIGHBOURS = 6;
+static const int DT_CROWDAGENT_MAX_NEIGHBOURS = 20;
 
 /// The maximum number of corners a crowd agent will look ahead in the path.
 /// This value is used for sizing the crowd agent corner buffers.
