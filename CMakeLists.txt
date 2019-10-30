@@ -16,6 +16,7 @@ add_subdirectory(Detour)
 add_subdirectory(DetourCrowd)
 add_subdirectory(DetourTileCache)
 add_subdirectory(Recast)
+add_subdirectory(RecastBuilder)
 
 if (RECASTNAVIGATION_DEMO)
     add_subdirectory(RecastDemo)
