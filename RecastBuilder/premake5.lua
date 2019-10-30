@@ -1,12 +1,12 @@
 --
--- premake5 file to build RecastDemo
+-- premake5 file to build RecastBuilder
 -- http://premake.github.io/
 --
 
 local action = _ACTION or ""
 local todir = "Build/" .. action
 
-workspace "recastnavigation"
+solution "recastnavigation"
 	configurations { 
 		"Debug",
 		"Release"
@@ -15,28 +15,27 @@ workspace "recastnavigation"
 	location (todir)
 
 	floatingpoint "Fast"
+	symbols "On"
 	exceptionhandling "Off"
 	rtti "Off"
-	symbols "On"
 	flags { "FatalCompileWarnings" }
-	cppdialect "C++98"
 
 	-- debug configs
-	filter "configurations:Debug"
+	configuration "Debug*"
 		defines { "DEBUG" }
 		targetdir ( todir .. "/lib/Debug" )
  
  	-- release configs
-	filter "configurations:Release"
-		defines { "RC_DISABLE_ASSERTS" }
+	configuration "Release*"
+		defines { "NDEBUG" }
 		optimize "On"
 		targetdir ( todir .. "/lib/Release" )
 
-	filter "system:not windows"
+	configuration "not windows"
 		warnings "Extra"
 
 	-- windows specific
-	filter "system:windows"
+	configuration "windows"
 		platforms { "Win32", "Win64" }
 		defines { "WIN32", "_WINDOWS", "_CRT_SECURE_NO_WARNINGS", "_HAS_EXCEPTIONS=0" }
 		-- warnings "Extra" uses /W4 which is too aggressive for us, so use W3 instead.
@@ -59,7 +58,7 @@ project "DebugUtils"
 		"../DetourTileCache/Include",
 		"../Recast/Include"
 	}
-	files {
+	files { 
 		"../DebugUtils/Include/*.h",
 		"../DebugUtils/Source/*.cpp"
 	}
@@ -75,11 +74,11 @@ project "Detour"
 		"../Detour/Source/*.cpp" 
 	}
 	-- linux library cflags and libs
-	filter {"system:linux", "toolset:gcc"}
-		buildoptions {
-			"-Wno-error=class-memaccess",
-			"-Wno-error=maybe-uninitialized"
+	configuration { "linux", "gmake" }
+		buildoptions { 
+			"-Wno-error=class-memaccess"
 		}
+
 
 project "DetourCrowd"
 	language "C++"
@@ -131,7 +130,7 @@ project "RecastDemo"
 		"../DetourTileCache/Include",
 		"../Recast/Include"
 	}
-	files {
+	files	{ 
 		"../RecastDemo/Include/*.h",
 		"../RecastDemo/Source/*.cpp",
 		"../RecastDemo/Contrib/fastlz/*.h",
@@ -139,7 +138,7 @@ project "RecastDemo"
 	}
 
 	-- project dependencies
-	links {
+	links { 
 		"DebugUtils",
 		"Detour",
 		"DetourCrowd",
@@ -151,12 +150,14 @@ project "RecastDemo"
 	targetdir "Bin"
 
 	-- linux library cflags and libs
-	filter "system:linux"
+	configuration { "linux", "gmake" }
 		buildoptions { 
 			"`pkg-config --cflags sdl2`",
 			"`pkg-config --cflags gl`",
 			"`pkg-config --cflags glu`",
 			"-Wno-ignored-qualifiers",
+			"-Wno-error=class-memaccess"
+
 		}
 		linkoptions { 
 			"`pkg-config --libs sdl2`",
@@ -164,13 +165,8 @@ project "RecastDemo"
 			"`pkg-config --libs glu`" 
 		}
 
-	filter { "system:linux", "toolset:gcc", "files:*.c" }
-		buildoptions {
-			"-Wno-class-memaccess"
-		}
-
 	-- windows library cflags and libs
-	filter "system:windows"
+	configuration { "windows" }
 		includedirs { "../RecastDemo/Contrib/SDL/include" }
 		libdirs { "../RecastDemo/Contrib/SDL/lib/%{cfg.architecture:gsub('x86_64', 'x64')}" }
 		debugdir "../RecastDemo/Bin/"
@@ -186,75 +182,73 @@ project "RecastDemo"
 		}
 
 	-- mac includes and libs
-	filter "system:macosx"
+	configuration { "macosx" }
 		kind "ConsoleApp" -- xcode4 failes to run the project if using WindowedApp
-		includedirs { "Bin/SDL2.framework/Headers" }
+		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
 		links { 
 			"OpenGL.framework", 
 			"SDL2.framework",
 			"Cocoa.framework",
 		}
+project "RecastBuilder"
+	language "C++"
+	kind "ConsoleApp"
+	includedirs { 
+		"../RecastBuilder/Include",
+		"../RecastBuilder/Contrib",
+		"../RecastBuilder/Contrib/fastlz",
+		"../DebugUtils/Include",
+		"../Detour/Include",
+		"../DetourCrowd/Include",
+		"../DetourTileCache/Include",
+		"../Recast/Include"
+	}
+	files	{ 
+		"../RecastBuilder/Include/*.h",
+		"../RecastBuilder/Source/*.cpp",
+		"../RecastBuilder/Contrib/fastlz/*.h",
+		"../RecastBuilder/Contrib/fastlz/*.c"
+	}
 
-		project "RecastBuilder"
-		language "C++"
-		kind "ConsoleApp"
-		includedirs { 
-			"../RecastBuilder/Include",
-			"../RecastBuilder/Contrib",
-			"../RecastBuilder/Contrib/fastlz",
-			"../DebugUtils/Include",
-			"../Detour/Include",
-			"../DetourCrowd/Include",
-			"../DetourTileCache/Include",
-			"../Recast/Include"
+	-- project dependencies
+	links { 
+		"DebugUtils",
+		"Detour",
+		"DetourCrowd",
+		"DetourTileCache",
+		"Recast"
+	}
+
+	-- distribute executable in RecastBuilder/Bin directory
+	targetdir "Bin"
+
+	-- linux library cflags and libs
+	configuration { "linux", "gmake" }
+		buildoptions { 
+			"-Wno-ignored-qualifiers",
+			"-Wno-error=class-memaccess"
 		}
-		files	{ 
-			"../RecastBuilder/Include/*.h",
-			"../RecastBuilder/Source/*.cpp",
-			"../RecastBuilder/Contrib/fastlz/*.h",
-			"../RecastBuilder/Contrib/fastlz/*.c"
+		linkoptions { 
 		}
-	
-		-- project dependencies
+
+	-- windows library cflags and libs
+	configuration { "windows" }
+		debugdir "../RecastBuilder/Bin/"
 		links { 
-			"DebugUtils",
-			"Detour",
-			"DetourCrowd",
-			"DetourTileCache",
-			"Recast"
 		}
-	
-		-- distribute executable in RecastBuilder/Bin directory
-		targetdir "Bin"
-	
-		-- linux library cflags and libs
-		configuration { "linux", "gmake" }
-			buildoptions { 
-				"-Wno-ignored-qualifiers",
-				"-Wno-error=class-memaccess"
-			}
-			linkoptions { 
-			}
-	
-		-- windows library cflags and libs
-		configuration { "windows" }
-			debugdir "../RecastBuilder/Bin/"
-			links { 
-			}
-			postbuildcommands {
-			}
-	
-		-- mac includes and libs
-		configuration { "macosx" }
-			kind "ConsoleApp" -- xcode4 failes to run the project if using WindowedApp
-			links { 
-				"Cocoa.framework",
-			}
+		postbuildcommands {
+		}
+
+	-- mac includes and libs
+	configuration { "macosx" }
+		kind "ConsoleApp" -- xcode4 failes to run the project if using WindowedApp
+		links { 
+			"Cocoa.framework",
+		}
 
 project "Tests"
 	language "C++"
 	kind "ConsoleApp"
-	cppdialect "C++14" -- Catch requires newer C++ features
 
 	-- Catch requires RTTI and exceptions
 	exceptionhandling "On"
@@ -269,9 +263,8 @@ project "Tests"
 		"../Recast/Source",
 		"../Tests/Recast",
 		"../Tests",
-		"../Tests/Contrib"
 	}
-	files { 
+	files	{ 
 		"../Tests/*.h",
 		"../Tests/*.hpp",
 		"../Tests/*.cpp",
@@ -279,7 +272,6 @@ project "Tests"
 		"../Tests/Recast/*.cpp",
 		"../Tests/Detour/*.h",
 		"../Tests/Detour/*.cpp",
-		"../Tests/Contrib/catch2/*.cpp"
 	}
 
 	-- project dependencies
@@ -294,14 +286,9 @@ project "Tests"
 	-- distribute executable in RecastDemo/Bin directory
 	targetdir "Bin"
 
-	-- enable ubsan and asan when compiling with clang
-	filter "toolset:clang"
-			buildoptions { "-fsanitize=undefined", "-fsanitize=address" } -- , "-fsanitize=memory" }
-			linkoptions { "-fsanitize=undefined", "-fsanitize=address" } --, "-fsanitize=memory" }
-
 	-- linux library cflags and libs
-	filter "system:linux"
-		buildoptions {
+	configuration { "linux", "gmake" }
+		buildoptions { 
 			"`pkg-config --cflags sdl2`",
 			"`pkg-config --cflags gl`",
 			"`pkg-config --cflags glu`",
@@ -310,12 +297,11 @@ project "Tests"
 		linkoptions { 
 			"`pkg-config --libs sdl2`",
 			"`pkg-config --libs gl`",
-			"`pkg-config --libs glu`",
-			"-lpthread"
+			"`pkg-config --libs glu`" 
 		}
 
 	-- windows library cflags and libs
-	filter "system:windows"
+	configuration { "windows" }
 		includedirs { "../RecastDemo/Contrib/SDL/include" }
 		libdirs { "../RecastDemo/Contrib/SDL/lib/%{cfg.architecture:gsub('x86_64', 'x64')}" }
 		debugdir "../RecastDemo/Bin/"
@@ -327,8 +313,11 @@ project "Tests"
 		}
 
 	-- mac includes and libs
-	filter "system:macosx"
+	configuration { "macosx" }
 		kind "ConsoleApp"
-		links {
+		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		links { 
+			"OpenGL.framework", 
+			"SDL2.framework",
 			"Cocoa.framework",
 		}
