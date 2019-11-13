@@ -31,11 +31,12 @@ enum SamplePolyAreas
 	SAMPLE_POLYAREA_DOOR,
 	SAMPLE_POLYAREA_GRASS,
 	SAMPLE_POLYAREA_JUMP,
-	SAMPLE_POLYAREA_CROSS
+	SAMPLE_POLYAREA_CROSS,
+	SAMPLE_POLYAREA_BLOCK
 };
 
 rcMeshLoaderObj::rcMeshLoaderObj() :
-	m_scale(0.01f),
+	m_scale(1),
 	m_verts(0),
 	m_tris(0),
 	m_mats(0),
@@ -223,12 +224,17 @@ bool rcMeshLoaderObj::load(const std::string& filename)
 		{
 			memset(matName, 0, 1024);
 			sscanf(row+7, "%s", matName);
+
 			if (strcmp(matName, "road") == 0)
 				mat = SamplePolyAreas::SAMPLE_POLYAREA_ROAD;
-			else if (strcmp(matName, "cross") == 0)
+			else if (strcmp(matName, "crosswalk") == 0)
 				mat = SamplePolyAreas::SAMPLE_POLYAREA_CROSS;
-			else
+			else if (strcmp(matName, "sidewalk") == 0)
 				mat = SamplePolyAreas::SAMPLE_POLYAREA_GROUND;
+			else if (strcmp(matName, "grass") == 0)
+				mat = SamplePolyAreas::SAMPLE_POLYAREA_GRASS;
+			else
+				mat = SamplePolyAreas::SAMPLE_POLYAREA_BLOCK;
 		}
 		if (row[0] == 'f')
 		{
