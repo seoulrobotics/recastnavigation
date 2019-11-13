@@ -134,9 +134,9 @@ void Sample::collectSettings(BuildSettings& settings)
 void Sample::resetCommonSettings()
 {
 	m_cellSize = 0.3f;
-	m_cellHeight = 0.2f;
+	m_cellHeight = 0.1f;
 	m_agentHeight = 1.8f;
-	m_agentRadius = 0.3f;
+	m_agentRadius = 0.4f;
 	m_agentMaxClimb = 0.3f;
 	m_agentMaxSlope = 45.0f;
 	m_regionMinSize = 8;

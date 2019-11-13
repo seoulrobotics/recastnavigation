@@ -49,6 +49,7 @@ int main(int /*argc*/, char** argv)
 	// load level
 	string path = argv[1];
 	geom = new InputGeom();
+	printf("Loading...\n");
 	if (!geom->load(&ctx, path))
 	{
 		delete geom;
@@ -79,7 +80,9 @@ int main(int /*argc*/, char** argv)
 		filename += ".bin";
 		// build
 		sample->handleSettings();
+		printf("Building...\n");
 		sample->handleBuild();
+		printf("Saving...\n");
 		sample->saveAll(filename.c_str(), sample->m_navMesh);
 	}
 
