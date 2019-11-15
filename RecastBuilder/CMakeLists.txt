@@ -13,11 +13,13 @@ include_directories(Include)
 
 if (WIN32)
     add_executable(RecastBuilder WIN32 ${SOURCES})
+    set_target_properties(RecastBuilder PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)
 elseif(APPLE)
     add_executable(RecastBuilder MACOSX_BUNDLE ${SOURCES})
 else()
     add_executable(RecastBuilder ${SOURCES})
 endif()
+
 
 add_dependencies(RecastBuilder DebugUtils Detour DetourCrowd DetourTileCache Recast)
 target_link_libraries(RecastBuilder DebugUtils Detour DetourCrowd DetourTileCache Recast)
