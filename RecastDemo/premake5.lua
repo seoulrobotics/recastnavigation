@@ -250,60 +250,6 @@ project "RecastBuilder"
 			"Cocoa.framework",
 		}
 
-project "RecastRebinary"
-	language "C++"
-	kind "ConsoleApp"
-	includedirs { 
-		"../RecastRebinary/Include",
-		"../RecastRebinary/Contrib",
-		"../RecastRebinary/Contrib/fastlz",
-		"../DebugUtils/Include",
-		"../Detour/Include",
-		"../DetourCrowd/Include",
-		"../DetourTileCache/Include",
-		"../Recast/Include"
-	}
-	files	{ 
-		"../RecastRebinary/Include/*.h",
-		"../RecastRebinary/Source/*.cpp",
-	}
-
-	-- project dependencies
-	links { 
-		"DebugUtils",
-		"Detour",
-		"DetourCrowd",
-		"DetourTileCache",
-		"Recast"
-	}
-
-	-- distribute executable in RecastRebinary/Bin directory
-	targetdir "Bin"
-
-	-- linux library cflags and libs
-	configuration { "linux", "gmake" }
-		buildoptions { 
-			"-Wno-ignored-qualifiers",
-			"-Wno-error=class-memaccess"
-		}
-		linkoptions { 
-		}
-
-	-- windows library cflags and libs
-	configuration { "windows" }
-		debugdir "../RecastRebinary/Bin/"
-		links { 
-		}
-		postbuildcommands {
-		}
-
-	-- mac includes and libs
-	configuration { "macosx" }
-		kind "ConsoleApp" -- xcode4 failes to run the project if using WindowedApp
-		links { 
-			"Cocoa.framework",
-		}
-
 project "Tests"
 	language "C++"
 	kind "ConsoleApp"

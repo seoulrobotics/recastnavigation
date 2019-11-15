@@ -22,22 +22,12 @@
 #include "DebugDraw.h"
 #include "Recast.h"
 #include "RecastDump.h"
-#include "PerfTimer.h"
 
 // These are example implementations of various interfaces used in Recast and Detour.
 
 /// Recast build context.
 class BuildContext : public rcContext
 {
-	TimeVal m_startTime[RC_MAX_TIMERS];
-	TimeVal m_accTime[RC_MAX_TIMERS];
-
-	static const int MAX_MESSAGES = 1000;
-	const char* m_messages[MAX_MESSAGES];
-	int m_messageCount;
-	static const int TEXT_POOL_SIZE = 8000;
-	char m_textPool[TEXT_POOL_SIZE];
-	int m_textPoolSize;
 	
 public:
 	BuildContext();

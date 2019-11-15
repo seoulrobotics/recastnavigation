@@ -10,8 +10,9 @@ string(REPLACE "." "," LIB_VERSION_NUM "${LIB_VERSION}.0")
 set_property(GLOBAL PROPERTY CXX_STANDARD 98)
 
 option(RECASTNAVIGATION_DEMO "Build demo" ON)
-option(RECASTNAVIGATION_TESTS "Build tests" ON)
-option(RECASTNAVIGATION_EXAMPLES "Build examples" ON)
+option(RECASTNAVIGATION_TESTS "Build tests" OFF)
+option(RECASTNAVIGATION_EXAMPLES "Build examples" OFF)
+option(RECASTNAVIGATION_STATIC "Build static libraries" ON)
 
 if(MSVC AND BUILD_SHARED_LIBS)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -45,7 +46,10 @@ add_subdirectory(Detour)
 add_subdirectory(DetourCrowd)
 add_subdirectory(DetourTileCache)
 add_subdirectory(Recast)
-add_subdirectory(RecastBuilder)
+
+if (RECASTNAVIGATION_BUILDER)
+    add_subdirectory(RecastBuilder)
+endif ()
 
 configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/recastnavigation-config.cmake.in
