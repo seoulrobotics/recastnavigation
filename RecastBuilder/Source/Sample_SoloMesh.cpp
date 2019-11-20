@@ -433,9 +433,6 @@ bool Sample_SoloMesh::handleBuild()
 		// Update poly flags from areas.
 		for (int i = 0; i < m_pmesh->npolys; ++i)
 		{
-			if (m_pmesh->areas[i] == RC_WALKABLE_AREA)
-				m_pmesh->areas[i] = SAMPLE_POLYAREA_GROUND;
-				
 			if (m_pmesh->areas[i] == SAMPLE_POLYAREA_GROUND ||
 				m_pmesh->areas[i] == SAMPLE_POLYAREA_CROSS)
 			{
