@@ -204,7 +204,7 @@ bool rcMeshLoaderObj::load(const std::string& filename)
 	int vcap = 0;
 	int tcap = 0;
 	char matName[1024];
-	char mat = SamplePolyAreas::SAMPLE_POLYAREA_GROUND;
+	char mat = SamplePolyAreas::SAMPLE_POLYAREA_BLOCK;
 
 	while (src < srcEnd)
 	{
@@ -218,7 +218,7 @@ bool rcMeshLoaderObj::load(const std::string& filename)
 			// Vertex pos
 			sscanf(row+1, "%f %f %f", &x, &y, &z);
 			addVertex(x, y, z, vcap);
-			mat = SamplePolyAreas::SAMPLE_POLYAREA_GROUND;
+			mat = SamplePolyAreas::SAMPLE_POLYAREA_BLOCK;
 		}
 		if (row[0] == 'u' && row[1] == 's')
 		{
