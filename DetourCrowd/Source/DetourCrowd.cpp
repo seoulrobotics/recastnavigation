@@ -1508,7 +1508,7 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 	
 }
 
-bool dtCrowd::hasVehicleNear(int index, float distance = 0.0f)
+bool dtCrowd::hasVehicleNear(int index, float distanceSqr)
 {
 	// get the agent
 	dtCrowdAgent* ag = &m_agents[index];
@@ -1521,7 +1521,7 @@ bool dtCrowd::hasVehicleNear(int index, float distance = 0.0f)
 		if (nei->params.useObb)
 		{
 			// check the distance
-			if (ag->neis[j].dist < distance)
+			if (ag->neis[j].dist <= distanceSqr)
 			{
 				return true;
 			}
