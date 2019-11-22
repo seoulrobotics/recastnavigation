@@ -363,7 +363,7 @@ public:
 
 	/// Returns if one of the neighbours of an agent has a OBB (Oriented Bounding Box).
 	/// That means for Carla, that a vehicle is near
-	bool hasVehicleNear(const int i);
+	bool hasVehicleNear(int index, float distance);
 	
 private:
 	// Explicitly disabled copy constructor and copy assignment operator.
