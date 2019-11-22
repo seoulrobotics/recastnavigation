@@ -144,8 +144,8 @@ void Sample::resetCommonSettings()
 	m_edgeMaxLen = 12.0f;
 	m_edgeMaxError = 1.3f;
 	m_vertsPerPoly = 6.0f;
-	m_detailSampleDist = 6.0f;
-	m_detailSampleMaxError = 1.0f;
+	m_detailSampleDist = 3.0f;
+	m_detailSampleMaxError = 0.5f;
 	m_partitionType = SAMPLE_PARTITION_WATERSHED;
 }
 

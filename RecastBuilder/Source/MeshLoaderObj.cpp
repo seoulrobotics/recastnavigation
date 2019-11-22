@@ -17,6 +17,7 @@
 //
 
 #include "MeshLoaderObj.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
@@ -33,6 +34,17 @@ enum SamplePolyAreas
 	SAMPLE_POLYAREA_JUMP,
 	SAMPLE_POLYAREA_CROSS,
 	SAMPLE_POLYAREA_BLOCK
+};
+enum SamplePolyFlags
+{
+	SAMPLE_POLYFLAGS_WALK		= 0x01,		// Ability to walk (ground, grass, road)
+	SAMPLE_POLYFLAGS_SWIM		= 0x02,		// Ability to swim (water).
+	SAMPLE_POLYFLAGS_DOOR		= 0x04,		// Ability to move through doors.
+	SAMPLE_POLYFLAGS_JUMP		= 0x08,		// Ability to jump.
+	SAMPLE_POLYFLAGS_DISABLED	= 0x10,		// Disabled polygon
+  	SAMPLE_POLYFLAGS_ROAD	    = 0x20,		// Ability to walk on road
+  	SAMPLE_POLYFLAGS_GRASS	    = 0x40,		// Ability to walk on grass
+	SAMPLE_POLYFLAGS_ALL		= 0xffff	// All abilities.
 };
 
 rcMeshLoaderObj::rcMeshLoaderObj() :

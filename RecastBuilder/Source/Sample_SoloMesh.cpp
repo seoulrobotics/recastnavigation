@@ -272,26 +272,22 @@ bool Sample_SoloMesh::handleBuild()
 		m_ctx->log(RC_LOG_PROGRESS, "Defining areas by material:");
 		for (int i=0; i<m_geom->getMesh()->getTriCount(); ++i)
 		{
-			if (mats[i] != 0)
-			{
-				// m_ctx->log(RC_LOG_PROGRESS, "Defining area for %d", mats[i]);
-				ind = tri[i*3] * 3;
-				faceVerts[0] = verts[ind];
-				faceVerts[1] = verts[ind+1];
-				faceVerts[2] = verts[ind+2];
-				ind = tri[i*3+1] * 3;
-				faceVerts[3] = verts[ind];
-				faceVerts[4] = verts[ind+1];
-				faceVerts[5] = verts[ind+2];
-				ind = tri[i*3+2] * 3;
-				faceVerts[6] = verts[ind];
-				faceVerts[7] = verts[ind+1];
-				faceVerts[8] = verts[ind+2];
-				// get min and max
-				min = rcMin<float>(rcMin<float>(faceVerts[1], faceVerts[4]), faceVerts[7]);
-				max = min +5;
-				rcMarkConvexPolyArea(m_ctx, faceVerts, 3, min, max, mats[i], *m_chf);
-			}
+			ind = tri[i*3] * 3;
+			faceVerts[0] = verts[ind];
+			faceVerts[1] = verts[ind+1];
+			faceVerts[2] = verts[ind+2];
+			ind = tri[i*3+1] * 3;
+			faceVerts[3] = verts[ind];
+			faceVerts[4] = verts[ind+1];
+			faceVerts[5] = verts[ind+2];
+			ind = tri[i*3+2] * 3;
+			faceVerts[6] = verts[ind];
+			faceVerts[7] = verts[ind+1];
+			faceVerts[8] = verts[ind+2];
+			// get min and max
+			min = rcMin<float>(rcMin<float>(faceVerts[1], faceVerts[4]), faceVerts[7]);
+			max = min +5;
+			rcMarkConvexPolyArea(m_ctx, faceVerts, 3, min, max, mats[i], *m_chf);
 		}
 	}
 	
