@@ -17,6 +17,7 @@
 //
 
 #include "MeshLoaderObj.h"
+#include "Sample.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,28 +25,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-enum SamplePolyAreas
-{
-	SAMPLE_POLYAREA_GROUND,
-	SAMPLE_POLYAREA_WATER,
-	SAMPLE_POLYAREA_ROAD,
-	SAMPLE_POLYAREA_DOOR,
-	SAMPLE_POLYAREA_GRASS,
-	SAMPLE_POLYAREA_JUMP,
-	SAMPLE_POLYAREA_CROSS,
-	SAMPLE_POLYAREA_BLOCK
-};
-enum SamplePolyFlags
-{
-	SAMPLE_POLYFLAGS_WALK		= 0x01,		// Ability to walk (ground, grass, road)
-	SAMPLE_POLYFLAGS_SWIM		= 0x02,		// Ability to swim (water).
-	SAMPLE_POLYFLAGS_DOOR		= 0x04,		// Ability to move through doors.
-	SAMPLE_POLYFLAGS_JUMP		= 0x08,		// Ability to jump.
-	SAMPLE_POLYFLAGS_DISABLED	= 0x10,		// Disabled polygon
-  	SAMPLE_POLYFLAGS_ROAD	    = 0x20,		// Ability to walk on road
-  	SAMPLE_POLYFLAGS_GRASS	    = 0x40,		// Ability to walk on grass
-	SAMPLE_POLYFLAGS_ALL		= 0xffff	// All abilities.
-};
 
 rcMeshLoaderObj::rcMeshLoaderObj() :
 	m_scale(1),
@@ -216,7 +195,7 @@ bool rcMeshLoaderObj::load(const std::string& filename)
 	int vcap = 0;
 	int tcap = 0;
 	char matName[1024];
-	char mat = SamplePolyAreas::SAMPLE_POLYAREA_BLOCK;
+	char mat = SamplePolyAreas::CARLA_AREA_BLOCK;
 
 	while (src < srcEnd)
 	{
@@ -230,7 +209,7 @@ bool rcMeshLoaderObj::load(const std::string& filename)
 			// Vertex pos
 			sscanf(row+1, "%f %f %f", &x, &y, &z);
 			addVertex(x, y, z, vcap);
-			mat = SamplePolyAreas::SAMPLE_POLYAREA_BLOCK;
+			mat = SamplePolyAreas::CARLA_AREA_BLOCK;
 		}
 		if (row[0] == 'u' && row[1] == 's')
 		{
@@ -238,15 +217,15 @@ bool rcMeshLoaderObj::load(const std::string& filename)
 			sscanf(row+7, "%s", matName);
 
 			if (strcmp(matName, "road") == 0)
-				mat = SamplePolyAreas::SAMPLE_POLYAREA_ROAD;
+				mat = SamplePolyAreas::CARLA_AREA_ROAD;
 			else if (strcmp(matName, "crosswalk") == 0)
-				mat = SamplePolyAreas::SAMPLE_POLYAREA_CROSS;
+				mat = SamplePolyAreas::CARLA_AREA_CROSSWALK;
 			else if (strcmp(matName, "sidewalk") == 0)
-				mat = SamplePolyAreas::SAMPLE_POLYAREA_GROUND;
+				mat = SamplePolyAreas::CARLA_AREA_SIDEWALK;
 			else if (strcmp(matName, "grass") == 0)
-				mat = SamplePolyAreas::SAMPLE_POLYAREA_GRASS;
+				mat = SamplePolyAreas::CARLA_AREA_GRASS;
 			else
-				mat = SamplePolyAreas::SAMPLE_POLYAREA_BLOCK;
+				mat = SamplePolyAreas::CARLA_AREA_BLOCK;
 		}
 		if (row[0] == 'f')
 		{
