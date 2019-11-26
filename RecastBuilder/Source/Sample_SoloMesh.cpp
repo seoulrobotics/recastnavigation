@@ -429,30 +429,25 @@ bool Sample_SoloMesh::handleBuild()
 		// Update poly flags from areas.
 		for (int i = 0; i < m_pmesh->npolys; ++i)
 		{
-			if (m_pmesh->areas[i] == SAMPLE_POLYAREA_GROUND ||
-				m_pmesh->areas[i] == SAMPLE_POLYAREA_CROSS)
+			if (m_pmesh->areas[i] == CARLA_AREA_SIDEWALK)
 			{
-				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK;
+				m_pmesh->flags[i] = CARLA_TYPE_SIDEWALK;
 			}
-			else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_GRASS)
+			else if (m_pmesh->areas[i] == CARLA_AREA_CROSSWALK)
 			{
-				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_GRASS;
+				m_pmesh->flags[i] = CARLA_TYPE_CROSSWALK;
 			}
-			else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_WATER)
+			else if (m_pmesh->areas[i] == CARLA_AREA_GRASS)
 			{
-				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_SWIM;
+				m_pmesh->flags[i] = CARLA_TYPE_GRASS;
 			}
-			else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_ROAD)
+			else if (m_pmesh->areas[i] == CARLA_AREA_ROAD)
 			{
-				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_ROAD;
-			}
-			else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_DOOR)
-			{
-				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK | SAMPLE_POLYFLAGS_DOOR;
+				m_pmesh->flags[i] = CARLA_TYPE_ROAD;
 			}
 			else
 			{
-				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_DISABLED;
+				m_pmesh->flags[i] = CARLA_TYPE_NONE;
 			}
 		}
 

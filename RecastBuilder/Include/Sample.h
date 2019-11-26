@@ -42,25 +42,23 @@ enum SampleToolType
 /// The use should specify these base on his needs.
 enum SamplePolyAreas
 {
-	SAMPLE_POLYAREA_GROUND,
-	SAMPLE_POLYAREA_WATER,
-	SAMPLE_POLYAREA_ROAD,
-	SAMPLE_POLYAREA_DOOR,
-	SAMPLE_POLYAREA_GRASS,
-	SAMPLE_POLYAREA_JUMP,
-	SAMPLE_POLYAREA_CROSS,
-	SAMPLE_POLYAREA_BLOCK
+	CARLA_AREA_BLOCK = 0,
+	CARLA_AREA_SIDEWALK,
+	CARLA_AREA_CROSSWALK,
+	CARLA_AREA_ROAD,
+	CARLA_AREA_GRASS,
 };
 enum SamplePolyFlags
 {
-	SAMPLE_POLYFLAGS_WALK		= 0x01,		// Ability to walk (ground, grass, road)
-	SAMPLE_POLYFLAGS_SWIM		= 0x02,		// Ability to swim (water).
-	SAMPLE_POLYFLAGS_DOOR		= 0x04,		// Ability to move through doors.
-	SAMPLE_POLYFLAGS_JUMP		= 0x08,		// Ability to jump.
-	SAMPLE_POLYFLAGS_DISABLED	= 0x10,		// Disabled polygon
-  	SAMPLE_POLYFLAGS_ROAD	    = 0x20,		// Ability to walk on road
-  	SAMPLE_POLYFLAGS_GRASS	    = 0x40,		// Ability to walk on grass
-	SAMPLE_POLYFLAGS_ALL		= 0xffff	// All abilities.
+	CARLA_TYPE_NONE			= 0x0001,
+	CARLA_TYPE_SIDEWALK		= 0x0002,
+	CARLA_TYPE_CROSSWALK	= 0x0004,
+	CARLA_TYPE_ROAD			= 0x0008,
+	CARLA_TYPE_GRASS		= 0x0010,
+	CARLA_TYPE_ALL			= 0xffff,
+
+	CARLA_TYPE_WALKABLE   = CARLA_TYPE_SIDEWALK | CARLA_TYPE_CROSSWALK | CARLA_TYPE_GRASS | CARLA_TYPE_ROAD,
+
 };
 
 enum SamplePartitionType
