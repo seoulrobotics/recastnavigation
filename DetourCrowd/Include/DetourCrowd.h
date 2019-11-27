@@ -345,6 +345,7 @@ public:
 	/// Same as getQueryHalfExtents. Left to maintain backwards compatibility.
 	/// @return The search halfExtents used by the crowd. [(x, y, z)]
 	const float* getQueryExtents() const { return m_agentPlacementHalfExtents; }
+
 	
 	/// Gets the velocity sample count.
 	/// @return The velocity sample count.
@@ -363,8 +364,20 @@ public:
 
 	/// Returns if one of the neighbours of an agent has a OBB (Oriented Bounding Box).
 	/// That means for Carla, that a vehicle is near
-	bool hasVehicleNear(int index, float distanceSqr);
-	
+	bool hasVehicleNear(int index, float distanceSqr, bool setAgentLookAt = true);
+
+	/// return the max squared distance between point and segments (to know the radius of an agent with OBB)
+	float getMaxDistancePointSegments(const float *point, const float *segments, int total);
+
+	/// return the min squared distance between point and segments
+	float getMinDistancePointSegments(const float *point, const float *segments, int total);
+
+	/// return the squared distance between agents, taking care if any has 'obb'
+	float getDistanceBetweenAgentsSqr(int index1, int index2);
+
+	/// return the penetration distance (not squared) between agents, taking care if any has 'obb'
+	float getPenetrationBetweenAgents(int index1, int index2);
+
 private:
 	// Explicitly disabled copy constructor and copy assignment operator.
 	dtCrowd(const dtCrowd&);
