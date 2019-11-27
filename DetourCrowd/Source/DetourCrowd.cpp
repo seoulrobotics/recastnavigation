@@ -1088,6 +1088,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 		dtCrowdAgent* ag = agents[i];
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 			continue;
+		if (ag->params.useObb)
+			continue;
 
 		// Update the collision boundary after certain distance has been passed or
 		// if it has become invalid.
@@ -1110,6 +1112,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 	for (int i = 0; i < nagents; ++i)
 	{
 		dtCrowdAgent* ag = agents[i];
+		if (ag->params.useObb)
+			continue;
 		
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 			continue;
@@ -1156,6 +1160,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			continue;
 		if (ag->paused)
 			continue;
+		if (ag->params.useObb)
+			continue;
 		if (ag->targetState == DT_CROWDAGENT_TARGET_NONE || ag->targetState == DT_CROWDAGENT_TARGET_VELOCITY)
 			continue;
 		
@@ -1194,10 +1200,13 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 	for (int i = 0; i < nagents; ++i)
 	{
 		dtCrowdAgent* ag = agents[i];
+		const int idx0 = getAgentIndex(ag);
 
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 			continue;
 		if (ag->targetState == DT_CROWDAGENT_TARGET_NONE)
+			continue;
+		if (ag->params.useObb)
 			continue;
 		if (ag->paused) 
 		{
@@ -1250,40 +1259,17 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 				dtVsub(diff, ag->npos, nei->npos);
 				diff[1] = 0;
 				
-				float distSqr = dtVlenSqr(diff);
-				
+				float distSqr = getDistanceBetweenAgentsSqr(idx0, ag->neis[j].idx);
+
 				if (distSqr < 0.00001f)
 					continue;
-
-				float dist = 0.0f;
-
-				// check if agent want to use the oriented bounding box instead of only a radius
-				if (nei->params.useObb)
-				{
-					// get the distance from point to all segments (4 segments per vehicle)
-					float seg_dist[4] { 0.0f, 0.0f, 0.0f, 0.0f };
-					float seg_per[4] { 0.0f, 0.0f, 0.0f, 0.0f };
-					dtDistancePtPolyEdgesSqr(ag->npos, nei->params.obb, 4, seg_dist, seg_per);
-					// get the minimum distance to the segments
-					float min = seg_dist[0];
-					dist = min;
-					for (int k=0; k<4; ++k)
-					{
-						if (seg_dist[k] < min)
-							min = seg_dist[k];	
-					}
-					if (dist > min)
-						dist = min;
-
-					distSqr = dist;
-				}
 
 				if (distSqr > dtSqr(separationDist))
 					continue;
 
-				dist = dtMathSqrtf(distSqr);
-				const float weight = separationWeight * (1.0f - dtSqr(dist*invSeparationDist));
-				
+				float dist = dtMathSqrtf(distSqr);
+				float distPer = dist * invSeparationDist;
+				const float weight = separationWeight * (1.0f - dtSqr(distPer));
 				dtVmad(disp, disp, diff, weight/dist);
 				w += 1.0f;
 			}
@@ -1308,10 +1294,13 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 	for (int i = 0; i < nagents; ++i)
 	{
 		dtCrowdAgent* ag = agents[i];
-		
+		const int idx0 = getAgentIndex(ag);
+
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 			continue;
 		if (ag->paused)
+			continue;
+		if (ag->params.useObb)
 			continue;
 		
 		if (ag->params.updateFlags & DT_CROWD_OBSTACLE_AVOIDANCE)
@@ -1322,7 +1311,14 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			for (int j = 0; j < ag->nneis; ++j)
 			{
 				const dtCrowdAgent* nei = &m_agents[ag->neis[j].idx];
-				m_obstacleQuery->addCircle(nei->npos, nei->params.radius, nei->vel, nei->dvel);
+				// check if it is an agent or a vehicle
+				if (nei->params.useObb)
+				{
+			        float radius = dtMathSqrtf(getMaxDistancePointSegments(nei->npos, nei->params.obb, 4));
+					m_obstacleQuery->addCircle(nei->npos, radius, nei->vel, nei->dvel);
+				}
+				else
+					m_obstacleQuery->addCircle(nei->npos, nei->params.radius, nei->vel, nei->dvel);
 			}
 
 			// Append neighbour segments as obstacles.
@@ -1371,13 +1367,14 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			continue;
 		if (ag->paused)
 			continue;
+		if (ag->params.useObb)
+			continue;
 		integrate(ag, dt);
 	}
 	
 	// Handle collisions.
-	static const float COLLISION_RESOLVE_FACTOR = 0.7f;
-	
-	for (int iter = 0; iter < 4; ++iter)
+	int iterations = 4;
+	for (int iter = 0; iter < iterations; ++iter)
 	{
 		for (int i = 0; i < nagents; ++i)
 		{
@@ -1386,7 +1383,7 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			
 			if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 				continue;
-			if (ag->paused)
+			if (ag->params.useObb)
 				continue;
 
 			dtVset(ag->disp, 0,0,0);
@@ -1395,34 +1392,67 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 
 			for (int j = 0; j < ag->nneis; ++j)
 			{
-				const dtCrowdAgent* nei = &m_agents[ag->neis[j].idx];
-				const int idx1 = getAgentIndex(nei);
+				const int idx1 = ag->neis[j].idx;
+				const dtCrowdAgent* nei = &m_agents[idx1];
+				
+				// get how much one pentrate the other (for negative values)
+				float dist = getPenetrationBetweenAgents(idx0, idx1);
+				
+				// draw text
+				if (nei->params.useObb) 
+				{
+					if (ag->params.userData)
+						*((float *) ag->params.userData) = dist;
+				}
+
+				// collide or not
+				if (dist > 0.0f)
+					continue;
 
 				float diff[3];
+				float pen = dt;
+				if (!nei->params.useObb) 
+				{
+					// walker collide with other walker
+					pen = 0.5f;
+
+					// half speed
+					// dtVscale(ag->vel, ag->vel,  0.5f);
+					// dtVscale(ag->dvel, ag->dvel, 0.5f);
+					// dtVscale(ag->nvel, ag->nvel, 0.5f);
+					
+					// Agents on top of each other, try to choose diverging separation directions.
+					// if (idx0 > idx1)
+					// 	dtVset(diff, -ag->dvel[2],0,ag->dvel[0]);
+					// else
+					// 	dtVset(diff, ag->dvel[2],0,-ag->dvel[0]);
+
+					// pen = 0.01f;
+					// dtVmad(ag->disp, ag->disp, diff, pen);
+				} 
+				else 
+				{
+					// walker collide with vehicle
+					pen = 1.0f;
+
+					// stop
+					dtVscale(ag->vel, ag->vel,  0.001f);
+					dtVscale(ag->dvel, ag->dvel, 0.001f);
+					dtVscale(ag->nvel, ag->nvel, 0.001f);
+				
+				}
+
 				dtVsub(diff, ag->npos, nei->npos);
 				diff[1] = 0;
+
+				// calculate the position to move to avoid collision
+				float direction[3];
+				float len = dtVlen(diff);
+				dtVscale(direction, diff, 1/len);
+				dtVscale(direction, direction, abs(dist));
+				dtVmad(ag->disp, ag->disp, direction, pen);
 				
-				float dist = dtVlenSqr(diff);
-				if (dist > dtSqr(ag->params.radius + nei->params.radius))
-					continue;
-				dist = dtMathSqrtf(dist);
-				float pen = (ag->params.radius + nei->params.radius) - dist;
-				if (dist < 0.0001f)
-				{
-					// Agents on top of each other, try to choose diverging separation directions.
-					if (idx0 > idx1)
-						dtVset(diff, -ag->dvel[2],0,ag->dvel[0]);
-					else
-						dtVset(diff, ag->dvel[2],0,-ag->dvel[0]);
-					pen = 0.01f;
-				}
-				else
-				{
-					pen = (1.0f/dist) * (pen*0.5f) * COLLISION_RESOLVE_FACTOR;
-				}
-				
-				dtVmad(ag->disp, ag->disp, diff, pen);			
-				
+				// dtVmad(ag->disp, ag->disp, diff, pen);
 				w += 1.0f;
 			}
 			
@@ -1445,12 +1475,15 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 		}
 	}
 	
+	
 	for (int i = 0; i < nagents; ++i)
 	{
 		dtCrowdAgent* ag = agents[i];
 		if (ag->state != DT_CROWDAGENT_STATE_WALKING)
 			continue;
 		if (ag->paused)
+			continue;
+		if (ag->params.useObb)
 			continue;
 		
 		// Move along navmesh.
@@ -1464,7 +1497,6 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			ag->corridor.reset(ag->corridor.getFirstPoly(), ag->npos);
 			ag->partial = false;
 		}
-
 	}
 	
 	// Update agents using off-mesh connection.
@@ -1475,6 +1507,8 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 			continue;
 		dtCrowdAgent* ag = agents[i];
 		if (ag->paused)
+			continue;
+		if (ag->params.useObb)
 			continue;
 
 		anim->t += dt;
@@ -1508,7 +1542,147 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 	
 }
 
-bool dtCrowd::hasVehicleNear(int index, float distanceSqr)
+// return the max squared distance between point and segments (to know the radius of an agent with OBB)
+float dtCrowd::getMaxDistancePointSegments(const float *point, const float *segments, int total) {
+	// get the distance from point to all segments (4 segments per vehicle)
+	float seg_dist[4] { 0.0f, 0.0f, 0.0f, 0.0f };
+	float seg_per[4] { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// compute distance to segments
+	dtDistancePtPolyEdgesSqr(point, segments, total, seg_dist, seg_per);
+
+	// get the maximum distance to the segments
+	float maxDist = seg_dist[0];
+	for (int k=1; k<total; ++k)
+	{
+		if (seg_dist[k] > maxDist)
+			maxDist = seg_dist[k];	
+	}
+
+	return maxDist;
+}
+
+// return the min squared distance between point and segments
+float dtCrowd::getMinDistancePointSegments(const float *point, const float *segments, int total) {
+	// get the distance from point to all segments (4 segments per vehicle)
+	float seg_dist[4] { 0.0f, 0.0f, 0.0f, 0.0f };
+	float seg_per[4] { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// compute distance to segments
+	dtDistancePtPolyEdgesSqr(point, segments, total, seg_dist, seg_per);
+
+	// get the minimum distance to the segments
+	float minDist = seg_dist[0];
+	for (int k=1; k<total; ++k)
+	{
+		if (seg_dist[k] < minDist)
+			minDist = seg_dist[k];	
+	}
+
+	return minDist;
+}
+
+// return the squared distance between agents, taking care if any has 'obb'
+float dtCrowd::getDistanceBetweenAgentsSqr(int index1, int index2) {
+    const dtCrowdAgent *agent1 = &m_agents[index1];
+    const dtCrowdAgent *agent2 = &m_agents[index2];
+    float dist12 = 0.0f;
+    float dist21 = 0.0f;
+
+    // check if agent has an oriented bounding box instead of only a radius
+    if (agent1->params.useObb)
+    {
+        dist21 = getMinDistancePointSegments(agent2->npos, agent1->params.obb, 4);
+    }
+
+    // check if agent want to use the oriented bounding box instead of only a radius
+    if (agent2->params.useObb)
+    {
+        dist12 = getMinDistancePointSegments(agent1->npos, agent2->params.obb, 4);
+    }
+
+    // check if both are boxes
+    if (dist12 != 0.0f && dist21 != 0.0f) {
+        float diff[3];
+        dtVsub(diff, agent1->npos, agent2->npos);
+        diff[1] = 0;
+        float distance = dtVlenSqr(diff);
+        distance -= (distance - dist21) + (distance - dist12);
+        return distance;
+    }
+    else if (dist12 != 0.0f)
+        return dist12;		// - agent1->params.radius;
+    else if (dist21 != 0.0f)
+        return dist21;		// - agent2->params.radius;
+	else {
+		// both are agents
+        float diff[3];
+        dtVsub(diff, agent1->npos, agent2->npos);
+        diff[1] = 0;
+        float distance = dtVlenSqr(diff);
+        return distance;
+	}
+}
+
+// return the penetration distance (not squared) between agents, taking care if any has 'obb'
+float dtCrowd::getPenetrationBetweenAgents(int index1, int index2) {
+    const dtCrowdAgent *agent1 = &m_agents[index1];
+    const dtCrowdAgent *agent2 = &m_agents[index2];
+    float radius1 = 0.0f;
+    float radius2 = 0.0f;
+    float dist12 = 0.0f;
+    float dist21 = 0.0f;
+
+    // check if agent has an oriented bounding box instead of only a radius
+    if (agent1->params.useObb)
+    {
+        dist21 = dtMathSqrtf(getMinDistancePointSegments(agent2->npos, agent1->params.obb, 4));
+        radius1 = dtMathSqrtf(getMaxDistancePointSegments(agent1->npos, agent1->params.obb, 4));
+    }
+
+    // check if agent want to use the oriented bounding box instead of only a radius
+    if (agent2->params.useObb)
+    {
+        dist12 = dtMathSqrtf(getMinDistancePointSegments(agent1->npos, agent2->params.obb, 4));
+        radius2 = dtMathSqrtf(getMaxDistancePointSegments(agent2->npos, agent2->params.obb, 4));
+    }
+
+    // check if both are boxes
+    if (dist12 != 0.0f && dist21 != 0.0f) {
+        float diff[3];
+        dtVsub(diff, agent1->npos, agent2->npos);
+        diff[1] = 0;
+        float distance = dtVlen(diff);
+        distance -= (distance - dist21) + (distance - dist12);
+        return distance;
+    }
+    else if (dist12 != 0.0f) {
+        // is agent inside OBB ?
+		if (dtPointInPolygon(agent1->npos, agent2->params.obb, 4))
+			return -dist12;
+		else
+			return dist12;
+	}
+    else if (dist21 != 0.0f) {
+		// is agent inside OBB ?
+		if (dtPointInPolygon(agent2->npos, agent1->params.obb, 4))
+			return -dist21;
+		else
+			return dist21;
+	}
+	else {
+		// both are agents
+        float diff[3];
+        dtVsub(diff, agent1->npos, agent2->npos);
+        diff[1] = 0;
+        // float distance = dtVlenSqr(diff);
+        float distance = dtVlen(diff);
+        distance -= agent1->params.radius + agent2->params.radius;
+        return distance;
+	}
+}
+
+bool dtCrowd::hasVehicleNear(int index, float distanceSqr, bool setAgentLookAt)
 {
 	// get the agent
 	dtCrowdAgent* ag = &m_agents[index];
@@ -1523,6 +1697,13 @@ bool dtCrowd::hasVehicleNear(int index, float distanceSqr)
 			// check the distance
 			if (ag->neis[j].dist <= distanceSqr)
 			{
+				// make the agent look at the vehicle
+				if (setAgentLookAt) {
+			        dtVsub(ag->dvel, nei->npos, ag->npos);
+					dtVscale(ag->dvel, ag->dvel, 0.0001);
+			        dtVcopy(ag->nvel, ag->dvel);
+			        dtVcopy(ag->vel, ag->dvel);
+				}
 				return true;
 			}
 		}
