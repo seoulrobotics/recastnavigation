@@ -1398,13 +1398,6 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 				// get how much one pentrate the other (for negative values)
 				float dist = getPenetrationBetweenAgents(idx0, idx1);
 				
-				// draw text
-				if (nei->params.useObb) 
-				{
-					if (ag->params.userData)
-						*((float *) ag->params.userData) = dist;
-				}
-
 				// collide or not
 				if (dist > 0.0f)
 					continue;
@@ -1682,7 +1675,7 @@ float dtCrowd::getPenetrationBetweenAgents(int index1, int index2) {
 	}
 }
 
-bool dtCrowd::hasVehicleNear(int index, float distanceSqr, bool setAgentLookAt)
+bool dtCrowd::hasVehicleNear(int index, float distanceSqr, float direction[3], bool setAgentLookAt)
 {
 	// get the agent
 	dtCrowdAgent* ag = &m_agents[index];
@@ -1697,14 +1690,24 @@ bool dtCrowd::hasVehicleNear(int index, float distanceSqr, bool setAgentLookAt)
 			// check the distance
 			if (ag->neis[j].dist <= distanceSqr)
 			{
-				// make the agent look at the vehicle
-				if (setAgentLookAt) {
-			        dtVsub(ag->dvel, nei->npos, ag->npos);
-					dtVscale(ag->dvel, ag->dvel, 0.0001);
-			        dtVcopy(ag->nvel, ag->dvel);
-			        dtVcopy(ag->vel, ag->dvel);
+				// check if the vehicle is in the given direction (about 45 degrees)
+				float vec1[3];
+				dtVsub(vec1, nei->npos, ag->npos);
+				dtVnormalize(vec1);
+				dtVnormalize(direction);
+				float projection = dtVdot(vec1, direction);
+				// if (ag->params.userData)
+				// 	*((float *) ag->params.userData) = projection;
+				if (projection >= 0.34f)		// cos(70) = 0.34
+				{
+					// make the agent look at the direction
+					if (setAgentLookAt) {
+						dtVcopy(ag->dvel, direction);
+						dtVcopy(ag->nvel, direction);
+						dtVcopy(ag->vel, direction);
+					}
+					return true;
 				}
-				return true;
 			}
 		}
 	}
