@@ -102,7 +102,7 @@ struct dtCrowdAgentParams
 	float obb[3*4];
 
 	/// User defined data attached to the agent.
-	void* userData;
+	unsigned char* userData;
 };
 
 enum MoveRequestState
@@ -364,7 +364,7 @@ public:
 
 	/// Returns if one of the neighbours of an agent has a OBB (Oriented Bounding Box).
 	/// That means for Carla, that a vehicle is near
-	bool hasVehicleNear(int index, float distanceSqr, bool setAgentLookAt = true);
+	bool hasVehicleNear(int index, float distanceSqr, float direction[3], bool setAgentLookAt = true);
 
 	/// return the max squared distance between point and segments (to know the radius of an agent with OBB)
 	float getMaxDistancePointSegments(const float *point, const float *segments, int total);
