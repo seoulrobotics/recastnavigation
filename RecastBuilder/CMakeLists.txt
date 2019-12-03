@@ -27,3 +27,5 @@ target_link_libraries(RecastBuilder DebugUtils Detour DetourCrowd DetourTileCach
 install(TARGETS RecastBuilder
         RUNTIME DESTINATION bin
         BUNDLE DESTINATION bin)
+
+install(TARGETS RecastBuilder DESTINATION ../../Util/DockerUtils/dist)
