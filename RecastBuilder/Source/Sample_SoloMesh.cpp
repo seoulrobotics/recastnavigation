@@ -115,7 +115,7 @@ bool Sample_SoloMesh::handleBuild()
 {
 	if (!m_geom || !m_geom->getMesh())
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Input mesh is not specified.");
+		printf("ERROR: buildNavigation: Input mesh is not specified.\n");
 		return false;
 	}
 	
@@ -161,9 +161,9 @@ bool Sample_SoloMesh::handleBuild()
 	// Start the build process.	
 	m_ctx->startTimer(RC_TIMER_TOTAL);
 	
-	m_ctx->log(RC_LOG_PROGRESS, "Building navigation:");
-	m_ctx->log(RC_LOG_PROGRESS, " - %d x %d cells", m_cfg.width, m_cfg.height);
-	m_ctx->log(RC_LOG_PROGRESS, " - %.1fK verts, %.1fK tris", nverts/1000.0f, ntris/1000.0f);
+	printf("Building navigation:\n");
+	printf(" - %d x %d cells\n", m_cfg.width, m_cfg.height);
+	printf(" - %.1fK verts, %.1fK tris\n", nverts/1000.0f, ntris/1000.0f);
 	
 	//
 	// Step 2. Rasterize input polygon soup.
@@ -173,12 +173,12 @@ bool Sample_SoloMesh::handleBuild()
 	m_solid = rcAllocHeightfield();
 	if (!m_solid)
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'solid'.");
+		printf("ERROR: buildNavigation: Out of memory 'solid'.\n");
 		return false;
 	}
 	if (!rcCreateHeightfield(m_ctx, *m_solid, m_cfg.width, m_cfg.height, m_cfg.bmin, m_cfg.bmax, m_cfg.cs, m_cfg.ch))
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create solid heightfield.");
+		printf("ERROR: buildNavigation: Could not create solid heightfield.\n");
 		return false;
 	}
 	
@@ -188,7 +188,7 @@ bool Sample_SoloMesh::handleBuild()
 	m_triareas = new unsigned char[ntris];
 	if (!m_triareas)
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'm_triareas' (%d).", ntris);
+		printf("ERROR: buildNavigation: Out of memory 'm_triareas' (%d).\n", ntris);
 		return false;
 	}
 	
@@ -196,10 +196,11 @@ bool Sample_SoloMesh::handleBuild()
 	// If your input data is multiple meshes, you can transform them here, calculate
 	// the are type for each of the meshes and rasterize them.
 	memset(m_triareas, 0, ntris*sizeof(unsigned char));
+	printf("Finding walkable triangles...\n");
 	rcMarkWalkableTriangles(m_ctx, m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas);
 	if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, m_triareas, ntris, *m_solid, m_cfg.walkableClimb))
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not rasterize triangles.");
+		printf("ERROR: buildNavigation: Could not rasterize triangles.\n");
 		return false;
 	}
 
@@ -212,6 +213,7 @@ bool Sample_SoloMesh::handleBuild()
 	//
 	// Step 3. Filter walkables surfaces.
 	//
+	printf("Filter walkable surfaces...\n");
 	
 	// Once all geoemtry is rasterized, we do initial pass of filtering to
 	// remove unwanted overhangs caused by the conservative rasterization
@@ -227,6 +229,7 @@ bool Sample_SoloMesh::handleBuild()
 	//
 	// Step 4. Partition walkable surface to simple regions.
 	//
+	printf("Partition of walkable surfaces...\n");
 
 	// Compact the heightfield so that it is faster to handle from now on.
 	// This will result more cache coherent data as well as the neighbours
@@ -234,12 +237,12 @@ bool Sample_SoloMesh::handleBuild()
 	m_chf = rcAllocCompactHeightfield();
 	if (!m_chf)
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'chf'.");
+		printf("ERROR: buildNavigation: Out of memory 'chf'.\n");
 		return false;
 	}
 	if (!rcBuildCompactHeightfield(m_ctx, m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid, *m_chf))
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
+		printf("ERROR: buildNavigation: Could not build compact data.\n");
 		return false;
 	}
 	
@@ -250,9 +253,11 @@ bool Sample_SoloMesh::handleBuild()
 	}
 		
 	// Erode the walkable area by agent radius.
+	printf("Remove walkable surfaces by agent raius...\n");
+
 	if (!rcErodeWalkableArea(m_ctx, m_cfg.walkableRadius, *m_chf))
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
+		printf("ERROR: buildNavigation: Could not erode.\n");
 		return false;
 	}
 
@@ -269,25 +274,29 @@ bool Sample_SoloMesh::handleBuild()
 		float faceVerts[3*3];
 		float min, max;
 		int ind;
-		m_ctx->log(RC_LOG_PROGRESS, "Defining areas by material:");
+		printf("Defining areas by material\n");
 		for (int i=0; i<m_geom->getMesh()->getTriCount(); ++i)
 		{
-			ind = tri[i*3] * 3;
-			faceVerts[0] = verts[ind];
-			faceVerts[1] = verts[ind+1];
-			faceVerts[2] = verts[ind+2];
-			ind = tri[i*3+1] * 3;
-			faceVerts[3] = verts[ind];
-			faceVerts[4] = verts[ind+1];
-			faceVerts[5] = verts[ind+2];
-			ind = tri[i*3+2] * 3;
-			faceVerts[6] = verts[ind];
-			faceVerts[7] = verts[ind+1];
-			faceVerts[8] = verts[ind+2];
-			// get min and max
-			min = rcMin<float>(rcMin<float>(faceVerts[1], faceVerts[4]), faceVerts[7]);
-			max = min +5;
-			rcMarkConvexPolyArea(m_ctx, faceVerts, 3, min, max, mats[i], *m_chf);
+			if (mats[i] != 0)
+			{
+				//printf("Defining area for %d", mats[i]);
+				ind = tri[i*3] * 3;
+				faceVerts[0] = verts[ind];
+				faceVerts[1] = verts[ind+1];
+				faceVerts[2] = verts[ind+2];
+				ind = tri[i*3+1] * 3;
+				faceVerts[3] = verts[ind];
+				faceVerts[4] = verts[ind+1];
+				faceVerts[5] = verts[ind+2];
+				ind = tri[i*3+2] * 3;
+				faceVerts[6] = verts[ind];
+				faceVerts[7] = verts[ind+1];
+				faceVerts[8] = verts[ind+2];
+				// get min and max
+				min = rcMin<float>(rcMin<float>(faceVerts[1], faceVerts[4]), faceVerts[7]);
+				max = min +5;
+				rcMarkConvexPolyArea(m_ctx, faceVerts, 3, min, max, mats[i], *m_chf);
+			}
 		}
 	}
 	
@@ -322,14 +331,14 @@ bool Sample_SoloMesh::handleBuild()
 		// Prepare for region partitioning, by calculating distance field along the walkable surface.
 		if (!rcBuildDistanceField(m_ctx, *m_chf))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build distance field.");
+			printf("ERROR: buildNavigation: Could not build distance field.\n");
 			return false;
 		}
 		
 		// Partition the walkable surface into simple regions without holes.
 		if (!rcBuildRegions(m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build watershed regions.");
+			printf("ERROR: buildNavigation: Could not build watershed regions.\n");
 			return false;
 		}
 	}
@@ -339,7 +348,7 @@ bool Sample_SoloMesh::handleBuild()
 		// Monotone partitioning does not need distancefield.
 		if (!rcBuildRegionsMonotone(m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build monotone regions.");
+			printf("ERROR: buildNavigation: Could not build monotone regions.\n");
 			return false;
 		}
 	}
@@ -348,7 +357,7 @@ bool Sample_SoloMesh::handleBuild()
 		// Partition the walkable surface into simple regions without holes.
 		if (!rcBuildLayerRegions(m_ctx, *m_chf, 0, m_cfg.minRegionArea))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build layer regions.");
+			printf("ERROR: buildNavigation: Could not build layer regions.\n");
 			return false;
 		}
 	}
@@ -356,51 +365,54 @@ bool Sample_SoloMesh::handleBuild()
 	//
 	// Step 5. Trace and simplify region contours.
 	//
+	printf("Trace and simplify region contours...\n");
 	
 	// Create contours.
 	m_cset = rcAllocContourSet();
 	if (!m_cset)
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'cset'.");
+		printf("ERROR: buildNavigation: Out of memory 'cset'.\n");
 		return false;
 	}
 	if (!rcBuildContours(m_ctx, *m_chf, m_cfg.maxSimplificationError, m_cfg.maxEdgeLen, *m_cset))
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create contours.");
+		printf("ERROR: buildNavigation: Could not create contours.\n");
 		return false;
 	}
 	
 	//
 	// Step 6. Build polygons mesh from contours.
 	//
+	printf("Build polygons mesh from contours...\n");
 	
 	// Build polygon navmesh from the contours.
 	m_pmesh = rcAllocPolyMesh();
 	if (!m_pmesh)
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmesh'.");
+		printf("ERROR: buildNavigation: Out of memory 'pmesh'.\n");
 		return false;
 	}
 	if (!rcBuildPolyMesh(m_ctx, *m_cset, m_cfg.maxVertsPerPoly, *m_pmesh))
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not triangulate contours.");
+		printf("ERROR: buildNavigation: Could not triangulate contours.\n");
 		return false;
 	}
 	
 	//
 	// Step 7. Create detail mesh which allows to access approximate height on each polygon.
 	//
+	printf("Create detail mesh...\n");
 	
 	m_dmesh = rcAllocPolyMeshDetail();
 	if (!m_dmesh)
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmdtl'.");
+		printf("ERROR: buildNavigation: Out of memory 'pmdtl'.\n");
 		return false;
 	}
 
 	if (!rcBuildPolyMeshDetail(m_ctx, *m_pmesh, *m_chf, m_cfg.detailSampleDist, m_cfg.detailSampleMaxError, *m_dmesh))
 	{
-		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
+		printf("ERROR: buildNavigation: Could not build detail mesh.\n");
 		return false;
 	}
 
@@ -425,6 +437,7 @@ bool Sample_SoloMesh::handleBuild()
 	{
 		unsigned char* navData = 0;
 		int navDataSize = 0;
+		printf("Create Detour data from Recast poly mesh...\n");
 
 		// Update poly flags from areas.
 		for (int i = 0; i < m_pmesh->npolys; ++i)
@@ -482,9 +495,10 @@ bool Sample_SoloMesh::handleBuild()
 		params.ch = m_cfg.ch;
 		params.buildBvTree = true;
 		
+		printf("Creating navigation data...\n");
 		if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
 		{
-			m_ctx->log(RC_LOG_ERROR, "Could not build Detour navmesh.");
+			printf("ERROR: Could not build Detour navmesh.\n");
 			return false;
 		}
 		
@@ -492,7 +506,7 @@ bool Sample_SoloMesh::handleBuild()
 		if (!m_navMesh)
 		{
 			dtFree(navData);
-			m_ctx->log(RC_LOG_ERROR, "Could not create Detour navmesh");
+			printf("ERROR: Could not create Detour navmesh\n");
 			return false;
 		}
 		
@@ -502,14 +516,14 @@ bool Sample_SoloMesh::handleBuild()
 		if (dtStatusFailed(status))
 		{
 			dtFree(navData);
-			m_ctx->log(RC_LOG_ERROR, "Could not init Detour navmesh");
+			printf("ERROR: Could not init Detour navmesh\n");
 			return false;
 		}
 		
 		status = m_navQuery->init(m_navMesh, 2048);
 		if (dtStatusFailed(status))
 		{
-			m_ctx->log(RC_LOG_ERROR, "Could not init Detour navmesh query");
+			printf("ERROR: Could not init Detour navmesh query\n");
 			return false;
 		}
 	}
