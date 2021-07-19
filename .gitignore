@@ -15,6 +15,7 @@ RecastDemo/Bin/Tests
 
 # Build directory
 RecastDemo/Build
+RecastBuilder/Build
 
 # XCode debug symbols archive
 RecastDemo/Bin/*.dSYM
