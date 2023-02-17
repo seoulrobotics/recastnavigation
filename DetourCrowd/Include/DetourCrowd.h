@@ -132,6 +132,9 @@ struct dtCrowdAgent
 	// True if the agent is paused (it does not move)
 	bool paused;
 
+	/// True if the agent has been killed by a vehicle
+	bool dead;
+
 	/// The path corridor the agent is using.
 	dtPathCorridor corridor;
 

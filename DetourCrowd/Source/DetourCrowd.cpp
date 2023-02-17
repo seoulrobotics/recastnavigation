@@ -562,6 +562,7 @@ int dtCrowd::addAgent(const float* pos, const dtCrowdAgentParams* params)
 	
 	ag->active = true;
 	ag->paused = false;
+	ag->dead = false;
 
 	return idx;
 }
@@ -1432,6 +1433,10 @@ void dtCrowd::update(const float dt, dtCrowdAgentDebugInfo* debug)
 					dtVscale(ag->dvel, ag->dvel, 0.001f);
 					dtVscale(ag->nvel, ag->nvel, 0.001f);
 				
+
+					// agent has been killed by vehicle
+					ag->dead = true;
+					ag->paused = true;
 				}
 
 				dtVsub(diff, ag->npos, nei->npos);
