@@ -9,7 +9,8 @@ string(REPLACE "." "," LIB_VERSION_NUM "${LIB_VERSION}.0")
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 98)
 
-option(RECASTNAVIGATION_DEMO "Build demo" ON)
+option(RECASTNAVIGATION_BUILDER "Build builder" ON)
+option(RECASTNAVIGATION_DEMO "Build demo" OFF)
 option(RECASTNAVIGATION_TESTS "Build tests" OFF)
 option(RECASTNAVIGATION_EXAMPLES "Build examples" OFF)
 option(RECASTNAVIGATION_STATIC "Build static libraries" ON)
