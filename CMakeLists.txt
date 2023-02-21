@@ -26,7 +26,7 @@ configure_file(
     "${RecastNavigation_SOURCE_DIR}/version.h.in"
     "${RecastNavigation_BINARY_DIR}/version.h")
 install(FILES "${RecastNavigation_BINARY_DIR}/version.h" DESTINATION
-        ${CMAKE_INSTALL_INCLUDEDIR}/recastnavigation)
+        ${CMAKE_INSTALL_INCLUDEDIR}/recast)
 
 # Needed for recastnavigation.pc.in
 set(prefix ${CMAKE_INSTALL_PREFIX})
