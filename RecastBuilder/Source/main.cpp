@@ -26,7 +26,7 @@
 #include "Recast.h"
 #include "RecastDebugDraw.h"
 #include "InputGeom.h"
-#include "Sample_SoloMesh.h"
+#include "Sample_TileMesh.h"
 
 #ifdef WIN32
 #	define snprintf _snprintf
@@ -41,15 +41,15 @@ int main(int /*argc*/, char** argv)
 	InputGeom* geom = 0;
 	Sample* sample = 0;
 	BuildContext ctx;
-		
+
 	// create sample to use
-	sample = new Sample_SoloMesh();
+	sample = new Sample_TileMesh();
 	sample->setContext(&ctx);
 
 	// load level
 	string path = argv[1];
 	geom = new InputGeom();
-	printf("Loading...\n");
+	printf("Loading '%s'...\n", path.c_str());
 	if (!geom->load(&ctx, path))
 	{
 		delete geom;
@@ -73,7 +73,7 @@ int main(int /*argc*/, char** argv)
 		// filename (replace .obj extension by .bin)
 		string filename(argv[1]);
 		size_t pos = filename.rfind(".", string::npos);
-		if (pos != string::npos) 
+		if (pos != string::npos)
 		{
 			filename = filename.substr(0, pos);
 		}
@@ -89,6 +89,6 @@ int main(int /*argc*/, char** argv)
 	// save all
 	delete sample;
 	delete geom;
-	
+
 	return 0;
 }

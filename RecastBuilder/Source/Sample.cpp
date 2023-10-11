@@ -147,6 +147,7 @@ void Sample::resetCommonSettings()
 	m_detailSampleDist = 3.0f;
 	m_detailSampleMaxError = 0.5f;
 	m_partitionType = SAMPLE_PARTITION_WATERSHED;
+	// m_partitionType = SAMPLE_PARTITION_MONOTONE;
 }
 
 void Sample::handleCommonSettings()
@@ -329,6 +330,7 @@ void Sample::saveAll(const char* path, const dtNavMesh* mesh)
 	header.magic = NAVMESHSET_MAGIC;
 	header.version = NAVMESHSET_VERSION;
 	header.numTiles = 0;
+	printf("Saving %d tiles\n", mesh->getMaxTiles());
 	for (int i = 0; i < mesh->getMaxTiles(); ++i)
 	{
 		const dtMeshTile* tile = mesh->getTile(i);

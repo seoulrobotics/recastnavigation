@@ -36,7 +36,7 @@
 
 
 Sample_SoloMesh::Sample_SoloMesh() :
-	m_keepInterResults(true),
+	m_keepInterResults(false),
 	m_totalBuildTimeMs(0),
 	m_triareas(0),
 	m_solid(0),
@@ -47,12 +47,12 @@ Sample_SoloMesh::Sample_SoloMesh() :
 	m_drawMode(DRAWMODE_NAVMESH)
 {
 }
-		
+
 Sample_SoloMesh::~Sample_SoloMesh()
 {
 	cleanup();
 }
-	
+
 void Sample_SoloMesh::cleanup()
 {
 	delete [] m_triareas;
@@ -118,20 +118,20 @@ bool Sample_SoloMesh::handleBuild()
 		printf("ERROR: buildNavigation: Input mesh is not specified.\n");
 		return false;
 	}
-	
+
 	cleanup();
-	
+
 	const float* bmin = m_geom->getNavMeshBoundsMin();
 	const float* bmax = m_geom->getNavMeshBoundsMax();
 	const float* verts = m_geom->getMesh()->getVerts();
 	const int nverts = m_geom->getMesh()->getVertCount();
 	const int* tris = m_geom->getMesh()->getTris();
 	const int ntris = m_geom->getMesh()->getTriCount();
-	
+
 	//
 	// Step 1. Initialize build config.
 	//
-	
+
 	// Init build configuration from GUI
 	memset(&m_cfg, 0, sizeof(m_cfg));
 	m_cfg.cs = m_cellSize;
@@ -147,7 +147,7 @@ bool Sample_SoloMesh::handleBuild()
 	m_cfg.maxVertsPerPoly = (int)m_vertsPerPoly;
 	m_cfg.detailSampleDist = m_detailSampleDist < 0.9f ? 0 : m_cellSize * m_detailSampleDist;
 	m_cfg.detailSampleMaxError = m_cellHeight * m_detailSampleMaxError;
-	
+
 	// Set the area where the navigation will be build.
 	// Here the bounds of the input mesh are used, but the
 	// area could be specified by an user defined box, etc.
@@ -158,17 +158,17 @@ bool Sample_SoloMesh::handleBuild()
 	// Reset build times gathering.
 	m_ctx->resetTimers();
 
-	// Start the build process.	
+	// Start the build process.
 	m_ctx->startTimer(RC_TIMER_TOTAL);
-	
+
 	printf("Building navigation:\n");
 	printf(" - %d x %d cells\n", m_cfg.width, m_cfg.height);
 	printf(" - %.1fK verts, %.1fK tris\n", nverts/1000.0f, ntris/1000.0f);
-	
+
 	//
 	// Step 2. Rasterize input polygon soup.
 	//
-	
+
 	// Allocate voxel heightfield where we rasterize our input data to.
 	m_solid = rcAllocHeightfield();
 	if (!m_solid)
@@ -181,7 +181,7 @@ bool Sample_SoloMesh::handleBuild()
 		printf("ERROR: buildNavigation: Could not create solid heightfield.\n");
 		return false;
 	}
-	
+
 	// Allocate array that can hold triangle area types.
 	// If you have multiple meshes you need to process, allocate
 	// and array which can hold the max number of triangles you need to process.
@@ -191,7 +191,7 @@ bool Sample_SoloMesh::handleBuild()
 		printf("ERROR: buildNavigation: Out of memory 'm_triareas' (%d).\n", ntris);
 		return false;
 	}
-	
+
 	// Find triangles which are walkable based on their slope and rasterize them.
 	// If your input data is multiple meshes, you can transform them here, calculate
 	// the are type for each of the meshes and rasterize them.
@@ -209,12 +209,12 @@ bool Sample_SoloMesh::handleBuild()
 		delete [] m_triareas;
 		m_triareas = 0;
 	}
-	
+
 	//
 	// Step 3. Filter walkables surfaces.
 	//
 	printf("Filter walkable surfaces...\n");
-	
+
 	// Once all geoemtry is rasterized, we do initial pass of filtering to
 	// remove unwanted overhangs caused by the conservative rasterization
 	// as well as filter spans where the character cannot possibly stand.
@@ -245,13 +245,13 @@ bool Sample_SoloMesh::handleBuild()
 		printf("ERROR: buildNavigation: Could not build compact data.\n");
 		return false;
 	}
-	
+
 	if (!m_keepInterResults)
 	{
 		rcFreeHeightField(m_solid);
 		m_solid = 0;
 	}
-		
+
 	// Erode the walkable area by agent radius.
 	printf("Remove walkable surfaces by agent raius...\n");
 
@@ -299,7 +299,7 @@ bool Sample_SoloMesh::handleBuild()
 			}
 		}
 	}
-	
+
 	// Partition the heightfield so that we can use simple algorithm later to triangulate the walkable areas.
 	// There are 3 martitioning methods, each with some pros and cons:
 	// 1) Watershed partitioning
@@ -325,7 +325,7 @@ bool Sample_SoloMesh::handleBuild()
 	//   - can be slow and create a bit ugly tessellation (still better than monotone)
 	//     if you have large open areas with small obstacles (not a problem if you use tiles)
 	//   * good choice to use for tiled navmesh with medium and small sized tiles
-	
+
 	if (m_partitionType == SAMPLE_PARTITION_WATERSHED)
 	{
 		// Prepare for region partitioning, by calculating distance field along the walkable surface.
@@ -334,7 +334,7 @@ bool Sample_SoloMesh::handleBuild()
 			printf("ERROR: buildNavigation: Could not build distance field.\n");
 			return false;
 		}
-		
+
 		// Partition the walkable surface into simple regions without holes.
 		if (!rcBuildRegions(m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
 		{
@@ -361,12 +361,12 @@ bool Sample_SoloMesh::handleBuild()
 			return false;
 		}
 	}
-	
+
 	//
 	// Step 5. Trace and simplify region contours.
 	//
 	printf("Trace and simplify region contours...\n");
-	
+
 	// Create contours.
 	m_cset = rcAllocContourSet();
 	if (!m_cset)
@@ -379,12 +379,12 @@ bool Sample_SoloMesh::handleBuild()
 		printf("ERROR: buildNavigation: Could not create contours.\n");
 		return false;
 	}
-	
+
 	//
 	// Step 6. Build polygons mesh from contours.
 	//
 	printf("Build polygons mesh from contours...\n");
-	
+
 	// Build polygon navmesh from the contours.
 	m_pmesh = rcAllocPolyMesh();
 	if (!m_pmesh)
@@ -397,12 +397,12 @@ bool Sample_SoloMesh::handleBuild()
 		printf("ERROR: buildNavigation: Could not triangulate contours.\n");
 		return false;
 	}
-	
+
 	//
 	// Step 7. Create detail mesh which allows to access approximate height on each polygon.
 	//
 	printf("Create detail mesh...\n");
-	
+
 	m_dmesh = rcAllocPolyMeshDetail();
 	if (!m_dmesh)
 	{
@@ -426,11 +426,11 @@ bool Sample_SoloMesh::handleBuild()
 
 	// At this point the navigation mesh data is ready, you can access it from m_pmesh.
 	// See duDebugDrawPolyMesh or dtCreateNavMeshData as examples how to access the data.
-	
+
 	//
 	// (Optional) Step 8. Create Detour data from Recast poly mesh.
 	//
-	
+
 	// The GUI may allow more max points per polygon than Detour can handle.
 	// Only build the detour navmesh if we do not exceed the limit.
 	if (m_cfg.maxVertsPerPoly <= DT_VERTS_PER_POLYGON)
@@ -494,14 +494,14 @@ bool Sample_SoloMesh::handleBuild()
 		params.cs = m_cfg.cs;
 		params.ch = m_cfg.ch;
 		params.buildBvTree = true;
-		
+
 		printf("Creating navigation data...\n");
 		if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
 		{
 			printf("ERROR: Could not build Detour navmesh.\n");
 			return false;
 		}
-		
+
 		m_navMesh = dtAllocNavMesh();
 		if (!m_navMesh)
 		{
@@ -509,9 +509,9 @@ bool Sample_SoloMesh::handleBuild()
 			printf("ERROR: Could not create Detour navmesh\n");
 			return false;
 		}
-		
+
 		dtStatus status;
-		
+
 		status = m_navMesh->init(navData, navDataSize, DT_TILE_FREE_DATA);
 		if (dtStatusFailed(status))
 		{
@@ -519,7 +519,7 @@ bool Sample_SoloMesh::handleBuild()
 			printf("ERROR: Could not init Detour navmesh\n");
 			return false;
 		}
-		
+
 		status = m_navQuery->init(m_navMesh, 2048);
 		if (dtStatusFailed(status))
 		{
@@ -527,15 +527,15 @@ bool Sample_SoloMesh::handleBuild()
 			return false;
 		}
 	}
-	
+
 	m_ctx->stopTimer(RC_TIMER_TOTAL);
 
 	// Show performance stats.
 	duLogBuildTimes(*m_ctx, m_ctx->getAccumulatedTime(RC_TIMER_TOTAL));
 	m_ctx->log(RC_LOG_PROGRESS, ">> Polymesh: %d vertices  %d polygons", m_pmesh->nverts, m_pmesh->npolys);
-	
+
 	m_totalBuildTimeMs = m_ctx->getAccumulatedTime(RC_TIMER_TOTAL)/1000.0f;
-	
+
 	if (m_tool)
 		m_tool->init(this);
 	initToolStates(this);
