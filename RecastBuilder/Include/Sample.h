@@ -118,10 +118,10 @@ public:
 	bool m_filterLowHangingObstacles;
 	bool m_filterLedgeSpans;
 	bool m_filterWalkableLowHeightSpans;
-	
+
 	SampleTool* m_tool;
 	SampleToolState* m_toolStates[MAX_TOOLS];
-	
+
 	BuildContext* m_ctx;
 
 	dtNavMesh* loadAll(const char* path);
@@ -130,9 +130,9 @@ public:
 public:
 	Sample();
 	virtual ~Sample();
-	
+
 	void setContext(BuildContext* ctx) { m_ctx = ctx; }
-	
+
 	void setTool(SampleTool* tool);
 	SampleToolState* getToolState(int type) { return m_toolStates[type]; }
 	void setToolState(int type, SampleToolState* s) { m_toolStates[type] = s; }
@@ -157,7 +157,7 @@ public:
 	virtual float getAgentRadius() { return m_agentRadius; }
 	virtual float getAgentHeight() { return m_agentHeight; }
 	virtual float getAgentClimb() { return m_agentMaxClimb; }
-	
+
 	void updateToolStates(const float dt);
 	void initToolStates(Sample* sample);
 	void resetToolStates();

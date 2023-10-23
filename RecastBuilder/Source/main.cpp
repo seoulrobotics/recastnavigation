@@ -27,6 +27,7 @@
 #include "RecastDebugDraw.h"
 #include "InputGeom.h"
 #include "Sample_TileMesh.h"
+#include "Sample_SoloMesh.h"
 
 #ifdef WIN32
 #	define snprintf _snprintf
@@ -36,7 +37,7 @@
 using std::string;
 using std::vector;
 
-int main(int /*argc*/, char** argv)
+int main(int argc, char** argv)
 {
 	InputGeom* geom = 0;
 	Sample* sample = 0;
@@ -44,7 +45,14 @@ int main(int /*argc*/, char** argv)
 
 	// create sample to use
 	sample = new Sample_TileMesh();
+	// sample = new Sample_SoloMesh();
 	sample->setContext(&ctx);
+
+	// set the agent radius from arguments
+	if (argc > 2)
+	{
+		sample->m_agentRadius = (float) atof(argv[2]);
+	}
 
 	// load level
 	string path = argv[1];

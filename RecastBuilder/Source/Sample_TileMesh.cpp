@@ -71,7 +71,7 @@ Sample_TileMesh::Sample_TileMesh() :
 	m_drawMode(DRAWMODE_NAVMESH),
 	m_maxTiles(0),
 	m_maxPolysPerTile(0),
-	m_tileSize(200),
+	m_tileSize(64),
 	m_tileCol(duRGBA(0,0,0,32)),
 	m_tileBuildTime(0),
 	m_tileMemUsage(0),
@@ -129,8 +129,10 @@ void Sample_TileMesh::handleSettings()
 		int polyBits = 22 - tileBits;
 		m_maxTiles = 1 << tileBits;
 		m_maxPolysPerTile = 1 << polyBits;
-		snprintf(text, 64, "Max Tiles  %d", m_maxTiles);
-		snprintf(text, 64, "Max Polys  %d", m_maxPolysPerTile);
+		snprintf(text, 64, "Max Tiles  %d\n", m_maxTiles);
+		printf(text);
+		snprintf(text, 64, "Max Polys  %d\n", m_maxPolysPerTile);
+		printf(text);
 	}
 	else
 	{
@@ -261,7 +263,8 @@ void Sample_TileMesh::buildTile(const float* pos)
 	m_ctx->resetLog();
 
 	int dataSize = 0;
-	unsigned char* data = buildTileMesh(tx, ty, m_lastBuiltTileBmin, m_lastBuiltTileBmax, dataSize);
+	bool canBeIgnored;
+	unsigned char* data = buildTileMesh(tx, ty, m_lastBuiltTileBmin, m_lastBuiltTileBmax, dataSize, canBeIgnored);
 
 	// Remove any previous data (navmesh owns and deletes the data).
 	m_navMesh->removeTile(m_navMesh->getTileRefAt(tx,ty,0),0,0);
@@ -330,10 +333,14 @@ void Sample_TileMesh::buildAllTiles()
 
 
 	// Start the build process.
+	int TilesAdded = 0;
+	int TilesIgnored = 0;
 	m_ctx->startTimer(RC_TIMER_TEMP);
-
 	for (int y = 0; y < th; ++y)
 	{
+		int TilesAddedInRow = 0;
+		int TilesIgnoredInRow = 0;
+		printf("TileRow %d/%d: ", y, th);
 		for (int x = 0; x < tw; ++x)
 		{
 			m_lastBuiltTileBmin[0] = bmin[0] + x*tcs;
@@ -344,10 +351,10 @@ void Sample_TileMesh::buildAllTiles()
 			m_lastBuiltTileBmax[1] = bmax[1];
 			m_lastBuiltTileBmax[2] = bmin[2] + (y+1)*tcs;
 
-			printf("Tile %d,%d: ", x, y);
 			int dataSize = 0;
-			unsigned char* data = buildTileMesh(x, y, m_lastBuiltTileBmin, m_lastBuiltTileBmax, dataSize);
-			if (data)
+			bool canBeIgnored = false;
+			unsigned char* data = buildTileMesh(x, y, m_lastBuiltTileBmin, m_lastBuiltTileBmax, dataSize, canBeIgnored);
+			if (data && !canBeIgnored)
 			{
 				// Remove any previous data (navmesh owns and deletes the data).
 				m_navMesh->removeTile(m_navMesh->getTileRefAt(x,y,0),0,0);
@@ -355,12 +362,24 @@ void Sample_TileMesh::buildAllTiles()
 				dtStatus status = m_navMesh->addTile(data,dataSize,DT_TILE_FREE_DATA,0,0);
 				if (dtStatusFailed(status))
 				{
-					printf("Failed with status: %0x, %0x\n", static_cast<unsigned int>(status), static_cast<unsigned int>(*data));
+					printf("	Tile %d,%d failed with status: %0x\n", x, y, static_cast<unsigned int>(status));
 					dtFree(data);
 				}
+				else
+				{
+					++TilesAddedInRow;
+					++TilesAdded;
+				}
+			}
+			else
+			{
+				++TilesIgnoredInRow;
+				++TilesIgnored;
 			}
 		}
+		printf("%d tiles added (total %d /%d max)\n", TilesAddedInRow, TilesAdded, m_maxTiles);
 	}
+	printf("Total tiles added: (%d / %d)\n", TilesAdded, m_maxTiles);
 
 	// Start the build process.
 	m_ctx->stopTimer(RC_TIMER_TEMP);
@@ -388,7 +407,7 @@ void Sample_TileMesh::removeAllTiles()
 }
 
 
-unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const float* bmin, const float* bmax, int& dataSize)
+unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const float* bmin, const float* bmax, int& dataSize, bool &canBeIgnored)
 {
 	if (!m_geom || !m_geom->getMesh() || !m_geom->getChunkyMesh())
 	{
@@ -496,7 +515,6 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 	const int ncid = rcGetChunksOverlappingRect(chunkyMesh, tbmin, tbmax, cid, 512);
 	if (!ncid)
 	{
-		printf("\n");
 		return 0;
 	}
 
@@ -516,7 +534,6 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 
 		if (!rcRasterizeTriangles(m_ctx, verts, nverts, ctris, m_triareas, nctris, *m_solid, m_cfg.walkableClimb))
 		{
-			printf("\n");
 			return 0;
 		}
 	}
@@ -681,7 +698,6 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 
 	if (m_cset->nconts == 0)
 	{
-		printf("\n");
 		return 0;
 	}
 
@@ -734,23 +750,28 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 		}
 
 		// Update poly flags from areas.
+		canBeIgnored = true;
 		for (int i = 0; i < m_pmesh->npolys; ++i)
 		{
 			if (m_pmesh->areas[i] == CARLA_AREA_SIDEWALK)
 			{
 				m_pmesh->flags[i] = CARLA_TYPE_SIDEWALK;
+				canBeIgnored = false;
 			}
 			else if (m_pmesh->areas[i] == CARLA_AREA_CROSSWALK)
 			{
 				m_pmesh->flags[i] = CARLA_TYPE_CROSSWALK;
+				canBeIgnored = false;
 			}
 			else if (m_pmesh->areas[i] == CARLA_AREA_GRASS)
 			{
 				m_pmesh->flags[i] = CARLA_TYPE_GRASS;
+				canBeIgnored = false;
 			}
 			else if (m_pmesh->areas[i] == CARLA_AREA_ROAD)
 			{
 				m_pmesh->flags[i] = CARLA_TYPE_ROAD;
+				canBeIgnored = false;
 			}
 			else
 			{
@@ -803,7 +824,7 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 
 	// Show performance stats.
 	duLogBuildTimes(*m_ctx, m_ctx->getAccumulatedTime(RC_TIMER_TOTAL));
-	printf("%3d vertices, %3d polygons\n", m_pmesh->nverts, m_pmesh->npolys);
+	// printf("%3d vertices, %3d polygons\n", m_pmesh->nverts, m_pmesh->npolys);
 
 	m_tileBuildTime = m_ctx->getAccumulatedTime(RC_TIMER_TOTAL)/1000.0f;
 
