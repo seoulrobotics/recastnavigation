@@ -111,7 +111,6 @@ void Sample_TileMesh::handleSettings()
 
 	if (m_geom)
 	{
-		char text[64];
 		int gw = 0, gh = 0;
 		const float* bmin = m_geom->getNavMeshBoundsMin();
 		const float* bmax = m_geom->getNavMeshBoundsMax();
@@ -119,8 +118,7 @@ void Sample_TileMesh::handleSettings()
 		const int ts = (int)m_tileSize;
 		const int tw = (gw + ts-1) / ts;
 		const int th = (gh + ts-1) / ts;
-		snprintf(text, 64, "Tiles  %d x %d\n", tw, th);
-		printf(text);
+		printf("Tiles %d x %d\n", tw, th);
 
 		// Max tiles and max polys affect how the tile IDs are caculated.
 		// There are 22 bits available for identifying a tile and a polygon.
@@ -129,10 +127,8 @@ void Sample_TileMesh::handleSettings()
 		int polyBits = 22 - tileBits;
 		m_maxTiles = 1 << tileBits;
 		m_maxPolysPerTile = 1 << polyBits;
-		snprintf(text, 64, "Max Tiles  %d\n", m_maxTiles);
-		printf(text);
-		snprintf(text, 64, "Max Polys  %d\n", m_maxPolysPerTile);
-		printf(text);
+		printf("Max Tiles %d\n", m_maxTiles);
+		printf("Max Polys %d\n", m_maxPolysPerTile);
 	}
 	else
 	{
