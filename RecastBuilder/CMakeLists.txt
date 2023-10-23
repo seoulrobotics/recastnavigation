@@ -21,6 +21,7 @@ endif()
 
 add_dependencies(RecastBuilder DebugUtils Detour DetourCrowd DetourTileCache Recast)
 target_link_libraries(RecastBuilder DebugUtils Detour DetourCrowd DetourTileCache Recast)
+set_target_properties(RecastBuilder PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)
 
 install(TARGETS RecastBuilder
         RUNTIME DESTINATION bin

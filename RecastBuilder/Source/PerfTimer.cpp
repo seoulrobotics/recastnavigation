@@ -18,7 +18,7 @@
 
 #include "PerfTimer.h"
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 
 // Win32
 #include <windows.h>
