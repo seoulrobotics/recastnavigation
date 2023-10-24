@@ -71,7 +71,7 @@ Sample_TileMesh::Sample_TileMesh() :
 	m_drawMode(DRAWMODE_NAVMESH),
 	m_maxTiles(0),
 	m_maxPolysPerTile(0),
-	m_tileSize(64),
+	m_tileSize(256),
 	m_tileCol(duRGBA(0,0,0,32)),
 	m_tileBuildTime(0),
 	m_tileMemUsage(0),
@@ -373,9 +373,9 @@ void Sample_TileMesh::buildAllTiles()
 				++TilesIgnored;
 			}
 		}
-		printf("%d tiles added (total %d /%d max)\n", TilesAddedInRow, TilesAdded, m_maxTiles);
+		printf("%d tiles added (total %d)\n", TilesAddedInRow, TilesAdded);
 	}
-	printf("Total tiles added: (%d / %d)\n", TilesAdded, m_maxTiles);
+	printf("Total tiles added: (%d / %d max)\n", TilesAdded, m_maxTiles);
 
 	// Start the build process.
 	m_ctx->stopTimer(RC_TIMER_TEMP);
