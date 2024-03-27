@@ -28,4 +28,4 @@ install(TARGETS RecastBuilder
         RUNTIME DESTINATION bin
         BUNDLE DESTINATION bin)
 
-install(TARGETS RecastBuilder DESTINATION ../../Util/DockerUtils/dist)
+# install(TARGETS RecastBuilder DESTINATION ../../Util/DockerUtils/dist)
